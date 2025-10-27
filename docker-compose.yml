@@ -1,25 +1,167 @@
 version: '3.8'
 
 services:
-  # Database
-  postgres:
-    image: postgres:15-alpine
-    container_name: classify_postgres
-    environment:
-      POSTGRES_DB: classify
-      POSTGRES_USER: classify
-      POSTGRES_PASSWORD: classify_password
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: classify_frontend
     ports:
-      - "5432:5432"
+      - "3000:3000"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./frontend:/app
+      - /app/node_modules
+    env_file:
+      - ./frontend/.env.local
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
     networks:
-      - app-network
+      - classify-network
+    depends_on:
+      - api-gateway
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: ./backend/api-gateway
+      dockerfile: Dockerfile.dev
+    container_name: classify_api_gateway
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/api-gateway:/app
+    environment:
+      - REDIS_URL=redis://redis:6379
+      # Specify URLs for each service visible from Gateway
+      - AUTH_SERVICE_URL=http://auth-service:8000
+      - PHOTOS_SERVICE_URL=http://photos-service:8000
+      - BLUR_DETECTION_SERVICE_URL=http://blur-detection-service:8000
+    networks:
+      - classify-network
+    depends_on:
+      - redis
+      - auth-service
+      - photos-service
+      - blur-detection-service
+
+  # Auth Service
+  auth-service:
+    build:
+      context: ./backend/auth-service
+      dockerfile: Dockerfile.dev
+    container_name: classify_auth_service
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./backend/auth-service:/app
+    environment:
+      - DATABASE_URL=postgresql://auth_service:password@auth-service-db:5432/auth_service
+      - REDIS_URL=redis://redis:6379
+    networks:
+      - classify-network
+    depends_on:
+      - auth-service-db
+      - redis
+
+  auth-service-db:
+    image: postgres:15-alpine
+    container_name: classify_auth_service_db
+    environment:
+      POSTGRES_DB: auth_service
+      POSTGRES_USER: auth_service
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5434:5432"
+    volumes:
+      - auth_service_data:/var/lib/postgresql/data
+      - ./backend/auth-service/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - classify-network
+
+  # Photos Service
+  photos-service:
+    build:
+      context: ./backend/photos-service
+      dockerfile: Dockerfile.dev
+    container_name: classify_photos_service
+    ports:
+      - "8002:8000"
+    volumes:
+      - ./backend/photos-service:/app
+    environment:
+      - DATABASE_URL=postgresql://photos_service:password@photos-service-db:5432/photos_service
+      - REDIS_URL=redis://redis:6379
+    networks:
+      - classify-network
+    depends_on:
+      - photos-service-db
+      - redis
+
+  photos-service-db:
+    image: postgres:15-alpine
+    container_name: classify_photos_service_db
+    environment:
+      POSTGRES_DB: photos_service
+      POSTGRES_USER: photos_service
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5435:5432"
+    volumes:
+      - photos_service_data:/var/lib/postgresql/data
+      - ./backend/photos-service/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - classify-network
+
+  # Blur Detection Service
+  blur-detection-service:
+    build:
+      context: ./backend/blur-detection-service
+      dockerfile: Dockerfile.dev
+    container_name: classify_blur_detection
+    ports:
+      - "8003:8000"
+    volumes:
+      - ./backend/blur-detection-service:/app
+    environment:
+      - PHOTOS_SERVICE_URL=http://photos-service:8000
+      - REDIS_URL=redis://redis:6379
+    networks:
+      - classify-network
+    depends_on:
+      - photos-service
+      - redis
+
+  blur-worker:
+    build:
+      context: ./backend/blur-detection-service
+      dockerfile: Dockerfile.dev
+    # container_name: classify_blur_worker
+    command: ["python", "worker.py"]   # Start worker only
+    volumes:
+      - ./backend/blur-detection-service:/app
+    environment:
+      - PHOTOS_SERVICE_URL=http://photos-service:8000
+      - REDIS_URL=redis://redis:6379
+    networks:
+      - classify-network
+    depends_on:
+      - redis
+      - photos-service
+
+  redis:
+    image: redis:7-alpine
+    container_name: classify_redis
+    ports:
+      - "6379:6379"
+    networks:
+      - classify-network
 
 volumes:
-  postgres_data:
+  auth_service_data:
+  photos_service_data:
 
 networks:
-  app-network:
+  classify-network:
     driver: bridge
