@@ -1,49 +1,86 @@
-from fastapi import FastAPI
+import logging
+from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-import strawberry
-from strawberry.fastapi import GraphQLRouter
-import sys
+from fastapi.responses import JSONResponse
 
-app = FastAPI(title="Classify API Gateway", version="1.0.0")
+from config import settings
+from exceptions import ServiceError
+from routes import health, auth, photos, blur
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
+
+app = FastAPI(
+    title="Classify API Gateway",
+    version=settings.app_version,
+    description="RESTful API Gateway for Classify photo blur detection service",
+    docs_url="/docs",
+    redoc_url="/redoc",
+)
 
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# GraphQL Schema (basic version)
-@strawberry.type
-class User:
-    id: str
-    email: str
-    name: str
 
-@strawberry.type
-class Query:
-    @strawberry.field
-    def hello(self) -> str:
-        return "Hello from Classify API!"
+# Global exception handlers
+@app.exception_handler(ServiceError)
+async def service_error_handler(request: Request, exc: ServiceError):
+    """Handle all ServiceError exceptions with consistent format."""
+    logger.error(
+        f"Service error: {exc.message} (status: {exc.status_code}, service: {exc.service_name})"
+    )
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=exc.to_dict(),
+    )
 
-    @strawberry.field
-    def users(self) -> list[User]:
-        return [User(id="1", email="test@example.com", name="Test User")]
 
-schema = strawberry.Schema(query=Query)
-graphql_app = GraphQLRouter(schema)
+@app.exception_handler(Exception)
+async def general_exception_handler(request: Request, exc: Exception):
+    """Handle unexpected exceptions."""
+    logger.error(f"Unexpected error: {str(exc)}", exc_info=True)
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={
+            "error": "InternalServerError",
+            "message": "An unexpected error occurred",
+            "status_code": 500,
+        },
+    )
 
-app.include_router(graphql_app, prefix="/graphql")
 
-@app.get("/health")
-async def health_check():
-    return {"status": "healthy", "service": "api-gateway"}
+# Include routers
+app.include_router(health.router, tags=["Health"])
+app.include_router(auth.router)
+app.include_router(photos.router)
+app.include_router(blur.router)
+
 
 @app.get("/")
 async def root():
-    return {"message": "Classify API Gateway", "graphql_endpoint": "/graphql"}
+    """Root endpoint with API information."""
+    return {
+        "service": "Classify API Gateway",
+        "version": settings.app_version,
+        "docs": "/docs",
+        "redoc": "/redoc",
+        "health_endpoints": {
+            "basic": "/health",
+            "ready": "/health/ready",
+            "services": "/health/services",
+        },
+    }
+
 
 if __name__ == "__main__":
     import uvicorn
