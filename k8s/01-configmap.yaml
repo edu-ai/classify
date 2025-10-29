@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: classify-config
+  namespace: classify
+data:
+  # サービス間通信（ClusterIP経由）
+  AUTH_SERVICE_URL: "http://auth-service:8000"
+  PHOTOS_SERVICE_URL: "http://photos-service:8000"
+  BLUR_DETECTION_SERVICE_URL: "http://blur-detection-service:8000"
+
+  # Redis（ElastiCache endpoint は後で Terraform outputs から取得）
+  REDIS_HOST: "REPLACE_WITH_ELASTICACHE_ENDPOINT"
+  REDIS_PORT: "6379"
+
+  # アプリケーション設定
+  LOG_LEVEL: "info"
+  ENVIRONMENT: "production"

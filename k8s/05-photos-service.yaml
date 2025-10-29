@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: photos-service
+  namespace: classify
+  labels:
+    app: photos-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: photos-service
+  template:
+    metadata:
+      labels:
+        app: photos-service
+    spec:
+      containers:
+      - name: photos-service
+        image: REPLACE_WITH_ECR_REGISTRY/classify-photos-service:latest
+        imagePullPolicy: Always
+        ports:
+        - name: http
+          containerPort: 8000
+          protocol: TCP
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: classify-secrets
+              key: PHOTOS_DB_URL
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: classify-config
+              key: REDIS_HOST
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: classify-config
+              key: REDIS_PORT
+        - name: AUTH_SERVICE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: classify-config
+              key: AUTH_SERVICE_URL
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: classify-config
+              key: LOG_LEVEL
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: photos-service
+  namespace: classify
+  labels:
+    app: photos-service
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8000
+    targetPort: 8000
+    protocol: TCP
+    name: http
+  selector:
+    app: photos-service

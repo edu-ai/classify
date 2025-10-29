@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blur-worker
+  namespace: classify
+  labels:
+    app: blur-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: blur-worker
+  template:
+    metadata:
+      labels:
+        app: blur-worker
+    spec:
+      containers:
+      - name: blur-worker
+        image: REPLACE_WITH_ECR_REGISTRY/classify-blur-worker:latest
+        imagePullPolicy: Always
+        env:
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: classify-config
+              key: REDIS_HOST
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: classify-config
+              key: REDIS_PORT
+        - name: PHOTOS_SERVICE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: classify-config
+              key: PHOTOS_SERVICE_URL
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: classify-config
+              key: LOG_LEVEL
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "200m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          exec:
+            command:
+            - python
+            - -c
+            - "import sys; sys.exit(0)"
+          initialDelaySeconds: 30
+          periodSeconds: 30
