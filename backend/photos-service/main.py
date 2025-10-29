@@ -6,6 +6,10 @@ from database import get_db, engine
 from models import Base, Photo
 import os
 import requests
+import json
+from datetime import datetime
+import time
+
 
 app = FastAPI(title="Classify Photos Service", version="1.0.0")
 
@@ -20,6 +24,7 @@ app.add_middleware(
 PICKER_API_URL = "https://photospicker.googleapis.com/v1"
 AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "http://auth-service:8000")
 PHOTOS_SERVICE_URL = "http://localhost:8002"
+GOOGLE_PHOTOS_API_URL = "https://photoslibrary.googleapis.com/v1"
 
 def get_access_token_from_auth_service(user_id: str) -> str:
     try:
@@ -30,6 +35,128 @@ def get_access_token_from_auth_service(user_id: str) -> str:
         return data["access_token"]
     except requests.RequestException as e:
         raise HTTPException(status_code=500, detail=f"Failed to get access token from Auth Service: {e}")
+
+def create_unblurred_album(user_id: str, db: Session) -> dict:
+    """
+    Create a new Google Photos album containing only unblurred images for the specified user.
+    """
+    try:
+        # 1. データベースから未ブレ写真を取得
+        unblurred_photos = db.query(Photo).filter(
+            Photo.user_id == user_id,
+            Photo.is_blurred == False
+        ).all()
+
+        if not unblurred_photos:
+            raise HTTPException(status_code=404, detail="No unblurred photos found for this user")
+
+        # 2. アクセストークン取得
+        access_token = get_access_token_from_auth_service(user_id)
+        headers = {"Authorization": f"Bearer {access_token}"}
+
+        # 3. アルバム作成
+        timestamp = datetime.now().strftime("%Y-%m-%d")
+        album_title = f"Unblurred Photos {timestamp}"
+        album_data = {"album": {"title": album_title}}
+
+        print(f"Creating album: {album_title}")
+        album_response = requests.post(
+            f"{GOOGLE_PHOTOS_API_URL}/albums",
+            headers={**headers, "Content-Type": "application/json"},
+            data=json.dumps(album_data)
+        )
+        album_response.raise_for_status()
+        album_result = album_response.json()
+        album_id = album_result["id"]
+        print(f"Album created with ID: {album_id}")
+
+        # 4. 写真アップロード＆メディアアイテム作成
+        media_items = []
+        uploaded_count = 0
+
+        for photo in unblurred_photos:
+            try:
+                # 4-1. Google Photos からダウンロード
+                photo_url = f"{photo.base_url}=d"
+                photo_response = requests.get(photo_url, headers=headers)
+                photo_response.raise_for_status()
+
+                # 4-2. Google Photos へアップロード
+                upload_response = requests.post(
+                    f"{GOOGLE_PHOTOS_API_URL}/uploads",
+                    headers={"Authorization": f"Bearer {access_token}"},
+                    data=photo_response.content
+                )
+                upload_response.raise_for_status()
+                upload_token = upload_response.text
+
+                # 4-3. メディアアイテム作成
+                media_item_data = {
+                    "newMediaItems": [{
+                        "description": f"Uploaded from classify app - {photo.filename}",
+                        "simpleMediaItem": {
+                            "uploadToken": upload_token,
+                            "fileName": photo.filename
+                        }
+                    }]
+                }
+                media_response = requests.post(
+                    f"{GOOGLE_PHOTOS_API_URL}/mediaItems:batchCreate",
+                    headers={**headers, "Content-Type": "application/json"},
+                    data=json.dumps(media_item_data)
+                )
+                media_response.raise_for_status()
+                media_result = media_response.json()
+                results = media_result.get("newMediaItemResults", [])
+
+                # 4-4. 成功判定を code=0 で行う
+                for result in results:
+                    status = result.get("status", {})
+                    if status.get("code", 0) != 0:  # 0 以外は失敗
+                        print(f"Failed to create media item {photo.filename}: {status}")
+                        continue
+                    media_item = result.get("mediaItem")
+                    if media_item and media_item.get("id"):
+                        media_items.append(media_item["id"])
+                        uploaded_count += 1
+                        print(f"Uploaded photo: {photo.filename}")
+
+            except Exception as e:
+                print(f"Failed to upload photo {photo.filename}: {e}")
+                continue
+
+        if not media_items:
+            raise HTTPException(status_code=500, detail="Failed to upload any photos")
+
+        # デバッグログ
+        print(f"Adding media items to album {album_id}: {media_items}")
+
+        # 安全のため 1 秒待機
+        time.sleep(1)
+
+        add_media_data = {"mediaItemIds": media_items}
+        add_response = requests.post(
+            f"{GOOGLE_PHOTOS_API_URL}/albums/{album_id}:batchAddMediaItems",
+            headers={**headers, "Content-Type": "application/json"},
+            data=json.dumps(add_media_data)
+        )
+        add_response.raise_for_status()
+        print(f"Added {len(media_items)} photos to album")
+
+        # 6. 結果返却
+        return {
+            "albumId": album_id,
+            "albumTitle": album_title,
+            "uploadedCount": uploaded_count
+        }
+
+    except requests.RequestException as e:
+        print(f"Google Photos API error: {e}")
+        raise HTTPException(status_code=500, detail=f"Google Photos API error: {e}")
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {e}")
+
 
 @app.get("/health")
 def health_check():
@@ -179,3 +306,10 @@ def update_photo(photo_id: str, user_id: str, updates: dict = Body(...), db: Ses
         "is_blurred": photo.is_blurred,
         "processed_at": photo.processed_at,
     }}
+
+@app.post("/google/unblurred-album/{user_id}")
+def create_unblurred_album_endpoint(user_id: str, db: Session = Depends(get_db)):
+    """
+    Create a new Google Photos album containing only unblurred images for the specified user.
+    """
+    return create_unblurred_album(user_id, db)

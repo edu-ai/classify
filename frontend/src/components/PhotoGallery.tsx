@@ -10,11 +10,24 @@ interface PhotoGalleryProps {
     handleExpiredPhoto: (id: string) => void
     analyzePhoto: (photoId: string) => void
     analyzePhotosBatch: (photoIds: string[], threshold?: number) => Promise<any>
+    createUnblurredAlbum: () => Promise<void>
+    albumLoading: boolean
 }
 
-export default function PhotoGallery({ photos, photosLoading, photosError, setPhotos, handleExpiredPhoto, analyzePhoto, analyzePhotosBatch }: PhotoGalleryProps) {
+export default function PhotoGallery({
+    photos,
+    photosLoading,
+    photosError,
+    setPhotos,
+    handleExpiredPhoto,
+    analyzePhoto,
+    analyzePhotosBatch,
+    createUnblurredAlbum,
+    albumLoading
+}: PhotoGalleryProps) {
     return (
         <>
+            {/* Flow */}
             <div className="bg-white rounded-lg shadow-md p-6 mb-6">
                 <h2 className="text-xl font-semibold mb-4 text-gray-600">Flow</h2>
                 <ol className="list-decimal list-inside space-y-2 text-gray-700">
@@ -38,11 +51,42 @@ export default function PhotoGallery({ photos, photosLoading, photosError, setPh
                         <br />
                         <span className="text-sm text-gray-500">Estimated time: a few hundred milliseconds to 1 second per photo</span>
                     </li>
+                    <li>
+                        <strong>Create Unblurred Album:</strong> After detecting blur, click the 「Create Unblurred Album」 button to collect all unblurred photos into a Google Photos album.
+                        <br />
+                        <span className="text-sm text-gray-500">Estimated time: a few seconds to a minute depending on the number of photos</span>
+                    </li>
                 </ol>
             </div>
 
-            <div className="bg-white rounded-lg shadow-md p-6">
+            {/* Photo Gallery */}
+            <div className="bg-white rounded-lg shadow-md p-6 relative">
                 <h2 className="text-xl font-semibold mb-4 text-gray-600">Photo Gallery</h2>
+
+                {/* Top-right buttons */}
+                <div className="absolute top-6 right-6 flex gap-2">
+                    <button
+                        className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold rounded"
+                        onClick={() => analyzePhotosBatch(photos.map(p => p.id))}
+                    >
+                        Detect All Blur
+                    </button>
+                    <button
+                        onClick={createUnblurredAlbum}
+                        disabled={albumLoading}
+                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                        {albumLoading ? (
+                            <>
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                Creating Album...
+                            </>
+                        ) : (
+                            'Create Unblurred Album'
+                        )}
+                    </button>
+                </div>
+
                 {photosLoading ? (
                     <div className="text-center py-8">
                         <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
@@ -53,9 +97,7 @@ export default function PhotoGallery({ photos, photosLoading, photosError, setPh
                         <p>{photosError}</p>
                         <button
                             className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                            onClick={() => {
-                                setPhotos([]);
-                            }}
+                            onClick={() => setPhotos([])}
                         >
                             Retry
                         </button>
@@ -69,13 +111,7 @@ export default function PhotoGallery({ photos, photosLoading, photosError, setPh
                         <p className="text-sm">Please pick and sync your photos first.</p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                        <button
-                            className="w-full px-3 py-2 text-white font-bold rounded mt-1 px-2 py-1 bg-blue-500 hover:bg-blue-600 rounded text-xs text-white"
-                            onClick={() => analyzePhotosBatch(photos.map(p => p.id))}
-                        >
-                            Detect All Blur
-                        </button>
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mt-12">
                         {photos.map((photo) => (
                             <div
                                 key={photo.id}
@@ -95,16 +131,16 @@ export default function PhotoGallery({ photos, photosLoading, photosError, setPh
                                             {photo.blur_score ? (
                                                 <>
                                                     <p className="text-sm text-gray-600">Blur Score: {photo.blur_score.toFixed(2)}</p>
-                                                    <p className="text-sm text-gray-600">Is Blurred: {photo.is_blurred ? 'Blurred' : 'Clear'}</p>
+                                                    <p className="text-sm text-gray-600">Status: {photo.is_blurred ? 'Blurred' : 'Clear'}</p>
                                                 </>
                                             ) : (
                                                 <>
                                                     <p className="text-sm text-gray-600">Blur Score: -</p>
-                                                    <p className="text-sm text-gray-600">Is Blurred: -</p>
+                                                    <p className="text-sm text-gray-600">Status: -</p>
                                                 </>
                                             )}
                                             <button
-                                                className="w-full px-3 py-2 text-white font-bold rounded mt-1 px-2 py-1 bg-blue-500 hover:bg-blue-600 rounded text-xs text-white"
+                                                className="w-full px-3 py-2 text-white text-sm font-semibold rounded mt-1 bg-blue-500 hover:bg-blue-600"
                                                 onClick={() => analyzePhoto(photo.id)}
                                             >
                                                 Detect Blur
@@ -131,7 +167,6 @@ export default function PhotoGallery({ photos, photosLoading, photosError, setPh
                             </div>
                         ))}
                     </div>
-
                 )}
             </div>
         </>

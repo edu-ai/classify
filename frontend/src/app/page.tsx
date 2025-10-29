@@ -25,6 +25,7 @@ export default function Home() {
   const [photos, setPhotos] = useState<Photo[]>([])
   const [photosLoading, setPhotosLoading] = useState(false)
   const [photosError, setPhotosError] = useState<string | null>(null);
+  const [albumLoading, setAlbumLoading] = useState(false)
   const expiredAlertShown = useRef(false)
   const [servicesStatus, setServicesStatus] = useState({
     apiGateway: 'checking...',
@@ -204,6 +205,42 @@ export default function Home() {
     }
   }
 
+  const createUnblurredAlbum = async (): Promise<void> => {
+    if (!session?.user?.id) return alert('Please log in to create an album')
+
+    const unblurredPhotos = photos.filter(p => p.is_blurred === false)
+    if (unblurredPhotos.length === 0) return alert('No unblurred photos found to create an album')
+
+    setAlbumLoading(true)
+    try {
+      const token = session.classifyAccessToken || session.accessToken
+      if (!token || token.length < 10) {
+        throw new Error('Authentication token is missing. Please sign in again.')
+      }
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/photos/google/unblurred-album/${session.user.id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      })
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}))
+        throw new Error(errData.detail || 'Failed to create unblurred album')
+      }
+
+      const data = await res.json()
+      alert(`Album created!\nTitle: ${data.albumTitle}\nPhotos uploaded: ${data.uploadedCount}`)
+    } catch (err) {
+      console.error('Error creating unblurred album:', err)
+      alert(`Error creating album: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    } finally {
+      setAlbumLoading(false)
+    }
+  }
+
+
   useEffect(() => {
     const fetchPhotos = async () => {
       if (!session) return
@@ -258,7 +295,7 @@ export default function Home() {
         <div className="flex h-screen">
           <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
           <div className="flex-1 overflow-auto p-6">
-            {activeTab === 'gallery' && <PhotoGallery photos={photos} photosLoading={photosLoading} photosError={photosError} setPhotos={setPhotos} handleExpiredPhoto={handleExpiredPhoto} analyzePhoto={analyzePhoto} analyzePhotosBatch={analyzePhotosBatch} />}
+            {activeTab === 'gallery' && <PhotoGallery photos={photos} photosLoading={photosLoading} photosError={photosError} setPhotos={setPhotos} handleExpiredPhoto={handleExpiredPhoto} analyzePhoto={analyzePhoto} analyzePhotosBatch={analyzePhotosBatch} createUnblurredAlbum={createUnblurredAlbum} albumLoading={albumLoading} />}
             {activeTab === 'stats' && <PhotoStatistics photos={photos} />}
             {activeTab === 'clearGallery' && <PhotoClearGallery photos={photos} photosLoading={photosLoading} photosError={photosError} setPhotos={setPhotos} handleExpiredPhoto={handleExpiredPhoto} />}
             {activeTab === 'blurredGallery' && <PhotoBlurredGallery photos={photos} photosLoading={photosLoading} photosError={photosError} setPhotos={setPhotos} handleExpiredPhoto={handleExpiredPhoto} />}

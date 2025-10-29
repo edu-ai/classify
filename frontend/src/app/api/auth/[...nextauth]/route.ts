@@ -8,7 +8,15 @@ const handler = NextAuth({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
       authorization: {
         params: {
-          scope: "openid email profile https://www.googleapis.com/auth/photospicker.mediaitems.readonly https://www.googleapis.com/auth/photoslibrary.readonly",
+          scope: [
+            'openid',
+            'email',
+            'profile',
+            'https://www.googleapis.com/auth/photospicker.mediaitems.readonly',
+            'https://www.googleapis.com/auth/photoslibrary.readonly',
+            'https://www.googleapis.com/auth/photoslibrary',
+            'https://www.googleapis.com/auth/photoslibrary.appendonly'
+          ].join(' '),
           access_type: "offline",
           prompt: "consent",
         },
@@ -46,8 +54,13 @@ const handler = NextAuth({
               }),
             })
           };
-          type WithAuthId = { authServiceId?: string }
-          ;(user as WithAuthId).authServiceId = authData.user.id
+
+          // Use JWT token from register response
+          type WithAuthId = { authServiceId?: string; classifyAccessToken?: string; classifyUserId?: string }
+          const userWithAuth = user as WithAuthId
+          userWithAuth.authServiceId = authData.user.id
+          userWithAuth.classifyAccessToken = authData.access_token
+          userWithAuth.classifyUserId = authData.user.id
         }
         return true
       } catch (error) {
@@ -62,10 +75,16 @@ const handler = NextAuth({
         token.expiresAt = account.expires_at
       }
 
-      type WithAuthId = { authServiceId?: string }
+      type WithAuthId = { authServiceId?: string; classifyAccessToken?: string; classifyUserId?: string }
       const u = user as WithAuthId | undefined
       if (u?.authServiceId) {
         token.userId = u.authServiceId
+      }
+      if (u?.classifyAccessToken) {
+        token.classifyAccessToken = u.classifyAccessToken
+      }
+      if (u?.classifyUserId) {
+        token.classifyUserId = u.classifyUserId
       }
 
       return token
@@ -74,6 +93,8 @@ const handler = NextAuth({
       console.log("JWT token in session callback:", token) // Debug
       session.accessToken = token.accessToken as string
       session.user.id = token.userId as string // Auth Service UUID
+      session.classifyAccessToken = token.classifyAccessToken as string
+      session.classifyUserId = token.classifyUserId as string
       return session
     },
   },
