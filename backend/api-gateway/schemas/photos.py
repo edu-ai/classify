@@ -133,3 +133,20 @@ class DeletePhotoResponse(BaseModel):
                 "message": "Photo deleted successfully",
             }
         }
+
+
+class UnblurredAlbumResponse(BaseModel):
+    """Response schema for unblurred album creation."""
+
+    albumId: str = Field(..., description="Google Photos album ID")
+    albumTitle: str = Field(..., description="Album title")
+    uploadedCount: int = Field(..., description="Number of photos uploaded to the album")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "albumId": "AKPKj3...",
+                "albumTitle": "Unblurred Photos 2025-01-15",
+                "uploadedCount": 12,
+            }
+        }

@@ -1,7 +1,9 @@
 """Photo management endpoints for API Gateway."""
 
 import logging
+import requests
 from fastapi import APIRouter, Depends, Query, Path, HTTPException, status
+from fastapi.responses import Response
 from typing import Optional
 
 from clients.photos_client import PhotosServiceClient
@@ -12,8 +14,10 @@ from schemas.photos import (
     PhotoFilter,
     CreatePhotoRequest,
     DeletePhotoResponse,
+    UnblurredAlbumResponse,
 )
 from exceptions import ResourceNotFoundError, AuthorizationError, ServiceError
+from config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -397,4 +401,74 @@ async def delete_photo(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete photo",
+        )
+
+@router.post("/google/unblurred-album/{user_id}")
+async def proxy_create_unblurred_album(user_id: str, current_user: dict = Depends(get_current_user)):
+    """Proxy request to photos-service to create unblurred album.
+
+    This endpoint forwards the request to the photos-service to create
+    a Google Photos album containing only unblurred photos for the user.
+
+    Headers:
+        Authorization: Bearer {access_token}
+
+    Args:
+        user_id: User ID to create album for
+        current_user: User info from authentication middleware
+
+    Returns:
+        Response from photos-service with album creation details
+
+    Raises:
+        HTTPException: 401 if not authenticated
+        HTTPException: 404 if no unblurred photos found
+        HTTPException: 503 if photos-service is unavailable
+    """
+    try:
+        user_id_from_token = current_user.get("user_id")
+        token = current_user.get("token")
+
+        if not user_id_from_token or not token:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid authentication data",
+            )
+
+        # Verify the user_id in the path matches the authenticated user
+        if user_id_from_token != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Cannot create album for another user",
+            )
+
+        logger.info(f"Proxying unblurred album creation request for user {user_id}")
+
+        response = requests.post(
+            f"{settings.photos_service_url}/google/unblurred-album/{user_id}",
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=settings.service_timeout
+        )
+
+        return Response(content=response.content, status_code=response.status_code)
+
+    except requests.exceptions.Timeout:
+        logger.error(f"Timeout creating unblurred album for user {user_id}")
+        raise HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail="Request to photos-service timed out",
+        )
+    except requests.exceptions.ConnectionError:
+        logger.error(f"Connection error creating unblurred album for user {user_id}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Photos service is unavailable",
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error creating unblurred album for user {user_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create unblurred album",
         )

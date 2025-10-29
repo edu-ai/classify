@@ -14,12 +14,15 @@ class GoogleOAuthService:
         if not all([self.client_id, self.client_secret, self.redirect_uri]):
             raise ValueError("Google OAuth credentials not properly configured")
 
-        self.scopes = [
-            'https://www.googleapis.com/auth/photoslibrary.readonly',
-            'https://www.googleapis.com/auth/photospicker.mediaitems.readonly',
-            'https://www.googleapis.com/auth/userinfo.email',
-            'https://www.googleapis.com/auth/userinfo.profile'
-        ]
+    self.scopes = [
+        "https://www.googleapis.com/auth/photoslibrary",
+        "https://www.googleapis.com/auth/photoslibrary.appendonly",
+        "https://www.googleapis.com/auth/photoslibrary.edit.appcreateddata",
+        "https://www.googleapis.com/auth/photoslibrary.readonly.appcreateddata",
+        "https://www.googleapis.com/auth/photospicker.mediaitems.readonly",
+        "https://www.googleapis.com/auth/userinfo.email",
+        "https://www.googleapis.com/auth/userinfo.profile",
+    ]
 
     def get_authorization_url(self, state: str) -> str:
         """Generate Google OAuth authorization URL"""

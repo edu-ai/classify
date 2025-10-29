@@ -14,6 +14,9 @@ from models import Base, User, OAuthToken
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
 import jwt
+import logging
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Classify Auth Service", version="1.0.0")
 token_manager = TokenManager()
@@ -193,20 +196,36 @@ async def store_oauth_token(request: dict, db: Session = Depends(get_db)):
         return {"status": "error", "message": str(e)}
 
 @app.get("/verify")
-async def verify_user(user_id: str = Depends(verify_token), db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+async def verify_user(credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)):
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            raise HTTPException(status_code=401, detail="Invalid token")
 
-    return {"user_id": user_id, "valid": True}
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        return {"user_id": user_id, "valid": True}
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
 @app.get("/me", response_model=UserResponse)
-async def get_current_user(user_id: str = Depends(verify_token), db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)):
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            raise HTTPException(status_code=401, detail="Invalid token")
 
-    return create_user_response(user)
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        return create_user_response(user)
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
 # Google OAuth endpoints (placeholders - will implement with google_oauth.py)
 @app.post("/oauth/google/init", response_model=OAuthInitResponse)
