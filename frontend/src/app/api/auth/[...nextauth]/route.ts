@@ -46,7 +46,7 @@ const handler = NextAuth({
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                user_id: authData.user.id, // UUID を使う
+                user_id: authData.user.id, // Use UUID
                 access_token: account.access_token,
                 refresh_token: account.refresh_token,
                 expires_at: account.expires_at,

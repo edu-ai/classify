@@ -1,11 +1,11 @@
-# ランダムパスワード生成 - Auth DB
+# Random password generation - Auth DB
 resource "random_password" "auth_db" {
   length  = 16
   special = true
   override_special = "!#$%&*()-_=+[]{}<>:?"
 }
 
-# ランダムパスワード生成 - Photos DB
+# Random password generation - Photos DB
 resource "random_password" "photos_db" {
   length  = 16
   special = true

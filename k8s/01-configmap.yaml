@@ -4,15 +4,15 @@ metadata:
   name: classify-config
   namespace: classify
 data:
-  # サービス間通信（ClusterIP経由）
+  # Inter-service communication (via ClusterIP)
   AUTH_SERVICE_URL: "http://auth-service:8000"
   PHOTOS_SERVICE_URL: "http://photos-service:8000"
   BLUR_DETECTION_SERVICE_URL: "http://blur-detection-service:8000"
 
-  # Redis（ElastiCache endpoint は後で Terraform outputs から取得）
+  # Redis (ElastiCache endpoint will be obtained from Terraform outputs later)
   REDIS_HOST: "REPLACE_WITH_ELASTICACHE_ENDPOINT"
   REDIS_PORT: "6379"
 
-  # アプリケーション設定
+  # Application settings
   LOG_LEVEL: "info"
   ENVIRONMENT: "production"

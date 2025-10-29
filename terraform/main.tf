@@ -25,7 +25,7 @@ provider "aws" {
   }
 }
 
-# VPC モジュール
+# VPC module
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "~> 5.0"
@@ -55,7 +55,7 @@ module "vpc" {
   }
 }
 
-# EKS クラスター
+# EKS cluster
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "~> 19.0"
@@ -94,7 +94,7 @@ module "eks" {
   }
 }
 
-# セキュリティグループ - RDS
+# Security group - RDS
 resource "aws_security_group" "rds" {
   name        = "${var.project_name}-rds-sg"
   description = "Security group for RDS PostgreSQL"
@@ -121,7 +121,7 @@ resource "aws_security_group" "rds" {
   }
 }
 
-# セキュリティグループ - ElastiCache
+# Security group - ElastiCache
 resource "aws_security_group" "redis" {
   name        = "${var.project_name}-redis-sg"
   description = "Security group for ElastiCache Redis"
@@ -148,7 +148,7 @@ resource "aws_security_group" "redis" {
   }
 }
 
-# DB サブネットグループ
+# DB subnet group
 resource "aws_db_subnet_group" "main" {
   name       = "${var.project_name}-db-subnet-group"
   subnet_ids = module.vpc.private_subnets
@@ -158,7 +158,7 @@ resource "aws_db_subnet_group" "main" {
   }
 }
 
-# ElastiCache サブネットグループ
+# ElastiCache subnet group
 resource "aws_elasticache_subnet_group" "main" {
   name       = "${var.project_name}-redis-subnet-group"
   subnet_ids = module.vpc.private_subnets
@@ -168,7 +168,7 @@ resource "aws_elasticache_subnet_group" "main" {
   }
 }
 
-# ECR リポジトリ
+# ECR repository
 resource "aws_ecr_repository" "services" {
   for_each = toset([
     "classify-api-gateway",
@@ -190,7 +190,7 @@ resource "aws_ecr_repository" "services" {
   }
 }
 
-# ECR ライフサイクルポリシー（古いイメージを自動削除）
+# ECR lifecycle policy (automatically delete old images)
 resource "aws_ecr_lifecycle_policy" "services" {
   for_each = aws_ecr_repository.services
 

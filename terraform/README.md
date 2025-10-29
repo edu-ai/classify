@@ -1,236 +1,236 @@
-# Terraform - Classify プロジェクト
+# Terraform - Classify Project
 
-Classify プロジェクトの AWS インフラを管理する Terraform 構成です。
+Terraform configuration to manage AWS infrastructure for the Classify project.
 
-## 📁 ファイル構成
+## 📁 File Structure
 
 ```
 terraform/
-├── main.tf              # VPC, EKS, セキュリティグループ, ECR
+├── main.tf              # VPC, EKS, Security Groups, ECR
 ├── data-stores.tf       # RDS PostgreSQL, ElastiCache Redis
-├── variables.tf         # 変数定義
-├── outputs.tf           # 出力値（エンドポイント、パスワード等）
-├── terraform.tfvars     # 変数の値（開発環境用）
-├── .gitignore          # terraform.tfstate を除外
-└── README.md           # このファイル
+├── variables.tf         # Variable definitions
+├── outputs.tf           # Output values (endpoints, passwords, etc.)
+├── terraform.tfvars     # Variable values (for development environment)
+├── .gitignore          # Excludes terraform.tfstate
+└── README.md           # This file
 ```
 
 ---
 
-## 🏗 作成されるリソース
+## 🏗 Resources Created
 
-### ネットワーク
+### Network
 - **VPC**: 10.0.0.0/16
-- **Public Subnets**: 2つ (10.0.101.0/24, 10.0.102.0/24)
-- **Private Subnets**: 2つ (10.0.1.0/24, 10.0.2.0/24)
-- **NAT Gateway**: 1つ (single_nat_gateway = true)
-- **Internet Gateway**: 1つ
+- **Public Subnets**: 2 subnets (10.0.101.0/24, 10.0.102.0/24)
+- **Private Subnets**: 2 subnets (10.0.1.0/24, 10.0.2.0/24)
+- **NAT Gateway**: 1 gateway (single_nat_gateway = true)
+- **Internet Gateway**: 1 gateway
 
-### コンピュート
+### Compute
 - **EKS Cluster**: Kubernetes 1.28
-- **EKS Node Group**: t3.small × 2-4台
+- **EKS Node Group**: t3.small × 2-4 nodes
 
-### データストア
+### Data Stores
 - **RDS PostgreSQL (auth-service)**: db.t3.micro, 20GB
 - **RDS PostgreSQL (photos-service)**: db.t3.micro, 20GB
 - **ElastiCache Redis**: cache.t3.micro × 1
 
-### コンテナレジストリ
-- **ECR**: 5つのリポジトリ
+### Container Registry
+- **ECR**: 5 repositories
   - classify-api-gateway
   - classify-auth-service
   - classify-photos-service
   - classify-blur-detection-service
   - classify-blur-worker
 
-### セキュリティ
-- **Security Groups**: RDS用、Redis用
-- **IAM Roles**: EKS ノード用、IRSA用
+### Security
+- **Security Groups**: For RDS and Redis
+- **IAM Roles**: For EKS nodes and IRSA
 
 ---
 
-## 🚀 使用方法
+## 🚀 Usage
 
-### 前提条件
+### Prerequisites
 
-1. **AWS CLI がインストール済み**
+1. **AWS CLI is installed**
    ```bash
    aws --version
    ```
 
-2. **AWS 認証情報が設定済み**
+2. **AWS credentials are configured**
    ```bash
    aws configure
    ```
 
-3. **Terraform がインストール済み** (>= 1.5)
+3. **Terraform is installed** (>= 1.5)
    ```bash
    terraform version
    ```
 
 ---
 
-### ステップ 1: 初期化
+### Step 1: Initialize
 
 ```bash
 cd terraform
 terraform init
 ```
 
-これにより、必要なプロバイダ（AWS, Random）がダウンロードされます。
+This will download the required providers (AWS, Random).
 
 ---
 
-### ステップ 2: プランの確認
+### Step 2: Review the Plan
 
 ```bash
 terraform plan
 ```
 
-作成されるリソースを確認します。約 20-30個のリソースが作成されます。
+Review the resources to be created. Approximately 20-30 resources will be created.
 
 ---
 
-### ステップ 3: 適用
+### Step 3: Apply
 
 ```bash
 terraform apply
 ```
 
-確認プロンプトで `yes` を入力します。
+Enter `yes` at the confirmation prompt.
 
-**所要時間**: 20-30分
-- VPC/サブネット: 2-3分
-- RDS: 10-15分
-- EKS: 10-15分
-- ElastiCache: 5-10分
+**Estimated Time**: 20-30 minutes
+- VPC/Subnets: 2-3 minutes
+- RDS: 10-15 minutes
+- EKS: 10-15 minutes
+- ElastiCache: 5-10 minutes
 
 ---
 
-### ステップ 4: 出力値の確認
+### Step 4: View Outputs
 
 ```bash
-# すべての出力を表示
+# Show all outputs
 terraform output
 
-# 特定の出力のみ表示
+# Show specific output
 terraform output eks_cluster_name
 terraform output redis_endpoint
 
-# Sensitive な出力を表示
+# Show sensitive outputs
 terraform output -raw auth_db_password
 terraform output -raw auth_db_connection_string
 ```
 
 ---
 
-## 📊 主要な出力値
+## 📊 Key Outputs
 
-### EKS 関連
+### EKS Related
 ```bash
-# kubectl 設定コマンド
+# kubectl configuration command
 terraform output -raw configure_kubectl
 
-# 実行例
+# Example execution
 $(terraform output -raw configure_kubectl)
 kubectl get nodes
 ```
 
-### RDS 関連
+### RDS Related
 ```bash
-# Auth DB 接続情報
+# Auth DB connection info
 terraform output auth_db_endpoint
 terraform output -raw auth_db_password
 terraform output -raw auth_db_connection_string
 
-# Photos DB 接続情報
+# Photos DB connection info
 terraform output photos_db_endpoint
 terraform output -raw photos_db_password
 terraform output -raw photos_db_connection_string
 ```
 
-### ElastiCache 関連
+### ElastiCache Related
 ```bash
 terraform output redis_endpoint
 terraform output redis_url
 ```
 
-### ECR 関連
+### ECR Related
 ```bash
-# ECR レジストリ URL
+# ECR registry URL
 terraform output ecr_registry
 
-# すべての ECR リポジトリ URL
+# All ECR repository URLs
 terraform output ecr_repository_urls
 ```
 
 ---
 
-## 🔐 Kubernetes Secrets の作成
+## 🔐 Creating Kubernetes Secrets
 
-Terraform outputs から Kubernetes Secrets を作成します。
+Create Kubernetes Secrets from Terraform outputs.
 
-### 方法 1: 手動で作成
+### Method 1: Manual Creation
 
 ```bash
-# Auth DB パスワードを取得
+# Get Auth DB password
 AUTH_DB_PASSWORD=$(terraform output -raw auth_db_password)
 AUTH_DB_ENDPOINT=$(terraform output -raw auth_db_endpoint | sed 's/:5432//')
 
-# Photos DB パスワードを取得
+# Get Photos DB password
 PHOTOS_DB_PASSWORD=$(terraform output -raw photos_db_password)
 PHOTOS_DB_ENDPOINT=$(terraform output -raw photos_db_endpoint | sed 's/:5432//')
 
-# Redis エンドポイントを取得
+# Get Redis endpoint
 REDIS_HOST=$(terraform output -raw redis_endpoint)
 
-# k8s/02-secrets.yaml を編集
+# Edit k8s/02-secrets.yaml
 cd ../k8s
 cp 02-secrets-template.yaml 02-secrets.yaml
 
-# 置換 (macOS)
+# Replace values (macOS)
 sed -i '' "s|REPLACE_WITH_PASSWORD|${AUTH_DB_PASSWORD}|g" 02-secrets.yaml
 sed -i '' "s|REPLACE_WITH_ENDPOINT|${AUTH_DB_ENDPOINT}|g" 02-secrets.yaml
-# ... 以下同様
+# ... and so on
 ```
 
-### 方法 2: スクリプトで自動作成
+### Method 2: Automated Script
 
 ```bash
 cd terraform
 ./scripts/update-k8s-manifests.sh
 ```
 
-（注: スクリプトは別途作成が必要）
+(Note: Script needs to be created separately)
 
 ---
 
-## 🔄 更新とメンテナンス
+## 🔄 Updates and Maintenance
 
-### リソースの変更
+### Changing Resources
 
 ```bash
-# terraform.tfvars を編集
+# Edit terraform.tfvars
 vim terraform.tfvars
 
-# 変更内容を確認
+# Review changes
 terraform plan
 
-# 適用
+# Apply changes
 terraform apply
 ```
 
-### ノード数のスケーリング
+### Scaling Node Count
 
 ```bash
-# terraform.tfvars で変更
+# Change in terraform.tfvars
 node_group_desired_size = 3
 
-# 適用
+# Apply
 terraform apply
 ```
 
-または kubectl で直接：
+Or directly with kubectl:
 
 ```bash
 kubectl scale deployment/api-gateway -n classify --replicas=3
@@ -238,101 +238,101 @@ kubectl scale deployment/api-gateway -n classify --replicas=3
 
 ---
 
-## 🗑 クリーンアップ
+## 🗑 Cleanup
 
-### すべてのリソースを削除
+### Delete All Resources
 
 ```bash
 terraform destroy
 ```
 
-確認プロンプトで `yes` を入力します。
+Enter `yes` at the confirmation prompt.
 
-**注意**:
-- RDS のスナップショットは保持されません（`skip_final_snapshot = true`）
-- 削除前に必要なデータをバックアップしてください
+**Warning**:
+- RDS snapshots will not be retained (`skip_final_snapshot = true`)
+- Back up any necessary data before deletion
 
 ---
 
-## 💰 コスト見積もり
+## 💰 Cost Estimation
 
-### 月額コスト（ap-northeast-1, 2024年10月時点）
+### Monthly Cost (ap-northeast-1, as of October 2024)
 
-| リソース | 仕様 | 月額 (USD) |
+| Resource | Specification | Monthly (USD) |
 |---------|------|-----------|
-| EKS クラスター | 1つ | $73 |
-| EKS ノード (t3.small) | 2台 × 24h | ~$30 |
-| RDS (db.t3.micro) | 2台 × 20GB | ~$30 |
-| ElastiCache (cache.t3.micro) | 1台 | ~$12 |
-| NAT Gateway | 1つ + データ転送 | ~$35 |
-| ALB | 1つ + データ転送 | ~$20 |
-| **合計** | | **~$200** |
+| EKS Cluster | 1 cluster | $73 |
+| EKS Nodes (t3.small) | 2 nodes × 24h | ~$30 |
+| RDS (db.t3.micro) | 2 instances × 20GB | ~$30 |
+| ElastiCache (cache.t3.micro) | 1 instance | ~$12 |
+| NAT Gateway | 1 gateway + data transfer | ~$35 |
+| ALB | 1 load balancer + data transfer | ~$20 |
+| **Total** | | **~$200** |
 
-**コスト削減のヒント**:
-- NAT Gateway: single_nat_gateway = true (すでに設定済み)
-- RDS: Multi-AZ を無効 (すでに設定済み)
-- EKS ノード: t3.small → t3.micro (ただし推奨しない)
-- 使わない時は `terraform destroy`
+**Cost Reduction Tips**:
+- NAT Gateway: single_nat_gateway = true (already configured)
+- RDS: Multi-AZ disabled (already configured)
+- EKS Nodes: t3.small → t3.micro (not recommended)
+- Run `terraform destroy` when not in use
 
 ---
 
-## 🛠 トラブルシューティング
+## 🛠 Troubleshooting
 
-### terraform init エラー
+### terraform init Error
 
 ```bash
-# プロバイダのキャッシュをクリア
+# Clear provider cache
 rm -rf .terraform .terraform.lock.hcl
 terraform init
 ```
 
-### terraform apply タイムアウト
+### terraform apply Timeout
 
-RDS や EKS の作成には時間がかかります。最大30分待ちます。
+RDS and EKS creation takes time. Wait up to 30 minutes.
 
-### EKS クラスターに接続できない
+### Cannot Connect to EKS Cluster
 
 ```bash
-# kubectl 設定を更新
+# Update kubectl configuration
 aws eks update-kubeconfig --name classify-cluster --region ap-northeast-1
 
-# 認証情報を確認
+# Verify credentials
 kubectl get nodes
 ```
 
-### RDS に接続できない
+### Cannot Connect to RDS
 
-- セキュリティグループが正しく設定されているか確認
-- EKS ノードから RDS への接続が許可されているか確認
+- Verify security group is correctly configured
+- Verify EKS nodes are allowed to access RDS
 
 ```bash
-# セキュリティグループ ID を取得
+# Get security group ID
 terraform output | grep security_group
 ```
 
 ---
 
-## 📝 本番環境への移行
+## 📝 Migrating to Production
 
-開発環境（dev）から本番環境（prod）に移行する場合：
+When migrating from development (dev) to production (prod):
 
-1. **terraform.tfvars を複製**
+1. **Duplicate terraform.tfvars**
    ```bash
    cp terraform.tfvars prod.tfvars
    ```
 
-2. **prod.tfvars を編集**
+2. **Edit prod.tfvars**
    ```hcl
    environment = "prod"
 
-   # 本番環境設定
-   single_nat_gateway = false        # NAT Gateway を冗長化
-   rds_multi_az = true                # RDS を Multi-AZ に
-   node_group_min_size = 3            # ノード数を増やす
-   node_instance_types = ["t3.medium"] # インスタンスサイズ up
+   # Production settings
+   single_nat_gateway = false        # Redundant NAT Gateway
+   rds_multi_az = true                # RDS Multi-AZ
+   node_group_min_size = 3            # Increase node count
+   node_instance_types = ["t3.medium"] # Larger instance size
    ```
 
-3. **workspace を使用（推奨）**
+3. **Use workspace (recommended)**
    ```bash
    terraform workspace new prod
    terraform workspace select prod
@@ -341,9 +341,9 @@ terraform output | grep security_group
 
 ---
 
-## 🔗 関連リンク
+## 🔗 Related Links
 
 - [Terraform AWS Provider](https://registry.terraform.io/providers/hashicorp/aws/latest/docs)
 - [Terraform VPC Module](https://registry.terraform.io/modules/terraform-aws-modules/vpc/aws/latest)
 - [Terraform EKS Module](https://registry.terraform.io/modules/terraform-aws-modules/eks/aws/latest)
-- [AWS EKS ベストプラクティス](https://aws.github.io/aws-eks-best-practices/)
+- [AWS EKS Best Practices](https://aws.github.io/aws-eks-best-practices/)
