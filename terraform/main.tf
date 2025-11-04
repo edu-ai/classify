@@ -4,11 +4,11 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.0"
+      version = "< 6.0.0"
     }
     random = {
       source  = "hashicorp/random"
-      version = "~> 3.5"
+      version = "= 3.6.0"
     }
   }
 }
@@ -28,7 +28,7 @@ provider "aws" {
 # VPC module
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "~> 5.0"
+  version = "~> 5.16"
 
   name = "${var.project_name}-vpc"
   cidr = var.vpc_cidr
@@ -58,7 +58,7 @@ module "vpc" {
 # EKS cluster
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 19.0"
+  version = "~> 20.31"
 
   cluster_name    = "${var.project_name}-cluster"
   cluster_version = var.kubernetes_version
