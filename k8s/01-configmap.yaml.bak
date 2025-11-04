@@ -11,7 +11,7 @@ data:
 
   # Redis (ElastiCache endpoint will be obtained from Terraform outputs later)
   REDIS_HOST: "classify-redis.vsfwqu.0001.apne1.cache.amazonaws.com"
-  REDIS_URL: "redis://classify-redis.vsfwqu.0001.apne1.cache.amazonaws.com"
+  REDIS_URL: "redis://classify-redis.vsfwqu.0001.apne1.cache.amazonaws.com:6379"
 
   # Application settings
   LOG_LEVEL: "info"

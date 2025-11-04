@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: auth-service
-        image: REPLACE_WITH_ECR_REGISTRY/classify-auth-service:latest
+        image: 531220277611.dkr.ecr.ap-northeast-1.amazonaws.com/classify-auth-service:latest
         imagePullPolicy: Always
         ports:
         - name: http

@@ -1,0 +1,155 @@
+{
+  "auth_db_connection_string": {
+    "sensitive": true,
+    "type": "string",
+    "value": "postgresql://auth_service:74CuepebpIJp(E$A@classify-auth-db.cqk9wg35dhjc.ap-northeast-1.rds.amazonaws.com:5432/auth_service"
+  },
+  "auth_db_endpoint": {
+    "sensitive": false,
+    "type": "string",
+    "value": "classify-auth-db.cqk9wg35dhjc.ap-northeast-1.rds.amazonaws.com:5432"
+  },
+  "auth_db_name": {
+    "sensitive": false,
+    "type": "string",
+    "value": "auth_service"
+  },
+  "auth_db_password": {
+    "sensitive": true,
+    "type": "string",
+    "value": "74CuepebpIJp(E$A"
+  },
+  "auth_db_username": {
+    "sensitive": false,
+    "type": "string",
+    "value": "auth_service"
+  },
+  "configure_kubectl": {
+    "sensitive": false,
+    "type": "string",
+    "value": "aws eks update-kubeconfig --name classify-cluster --region ap-northeast-1"
+  },
+  "ecr_registry": {
+    "sensitive": false,
+    "type": "string",
+    "value": "531220277611.dkr.ecr.ap-northeast-1.amazonaws.com"
+  },
+  "ecr_repository_urls": {
+    "sensitive": false,
+    "type": [
+      "object",
+      {
+        "classify-api-gateway": "string",
+        "classify-auth-service": "string",
+        "classify-blur-detection-service": "string",
+        "classify-blur-worker": "string",
+        "classify-photos-service": "string"
+      }
+    ],
+    "value": {
+      "classify-api-gateway": "531220277611.dkr.ecr.ap-northeast-1.amazonaws.com/classify-api-gateway",
+      "classify-auth-service": "531220277611.dkr.ecr.ap-northeast-1.amazonaws.com/classify-auth-service",
+      "classify-blur-detection-service": "531220277611.dkr.ecr.ap-northeast-1.amazonaws.com/classify-blur-detection-service",
+      "classify-blur-worker": "531220277611.dkr.ecr.ap-northeast-1.amazonaws.com/classify-blur-worker",
+      "classify-photos-service": "531220277611.dkr.ecr.ap-northeast-1.amazonaws.com/classify-photos-service"
+    }
+  },
+  "eks_cluster_certificate_authority_data": {
+    "sensitive": true,
+    "type": "string",
+    "value": "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURCVENDQWUyZ0F3SUJBZ0lJQ3JpQ2UwMG5ZR2N3RFFZSktvWklodmNOQVFFTEJRQXdGVEVUTUJFR0ExVUUKQXhNS2EzVmlaWEp1WlhSbGN6QWVGdzB5TlRFd01qa3hOekkzTVRGYUZ3MHpOVEV3TWpjeE56TXlNVEZhTUJVeApFekFSQmdOVkJBTVRDbXQxWW1WeWJtVjBaWE13Z2dFaU1BMEdDU3FHU0liM0RRRUJBUVVBQTRJQkR3QXdnZ0VLCkFvSUJBUUMvTHhLT2JGZ1QxUWRQKzlEa0h0czE5Mkh5NmlOVFVvVVNQSHM5WnNtQlB1dmpGYTBsZEZKbkdWeEQKTGwveFYwTVZub00yOFQ2V0tUUjNuRi9NOFROMmdyUE9HQTdMeS81ZGdVc3doOXY5enRNTElrYVdXSC95MHVxdApkZUF6ZWxWMDM4dVphWEMzem5FMXVwc0NxVnhxSmRDUTQ3WXdxbnI4Q3lFYmw3bXFReHhLNWgvMW1lTzF4QVo4Cittc3JhaXhjbU9rT25pKzZtV0RPV29RaFFkVkt1UnVFbEpwcy9kWFdrdHFoRlNRMkQvN1VKdFFMSjV5S3JnVjQKYmZqM0ZGQXc3UUt2WVoxL0ZwOHd3MHdJa3RYbkIwQ1YycDhyME8zbWdBaHBMLzY3UUF4TXdmdFEzQzQrNVBLVgpVRkJnbVlUYzVVblRGY2xSRWt4T1htMWxxNHh4QWdNQkFBR2pXVEJYTUE0R0ExVWREd0VCL3dRRUF3SUNwREFQCkJnTlZIUk1CQWY4RUJUQURBUUgvTUIwR0ExVWREZ1FXQkJRbTFOTXdaZExnUmpYcll2TjhkNGNPVmNrWHRUQVYKQmdOVkhSRUVEakFNZ2dwcmRXSmxjbTVsZEdWek1BMEdDU3FHU0liM0RRRUJDd1VBQTRJQkFRQVJ0Z1RtWXRqKwpaUFFyT3lUL1NlTUN6UTZXUkpqdDRvQXVUUGJYeVJPRTM5OW1QZEpQM2htNUFGSkFmS0d5TDI0M3dDMlg5VHVBClY2dlk4SFJMdkdnbnFiYzl5NDBrZ0pYY0R5bC91SjhvelBPaDBOVW1VTXQzdWNWbmtOUm9Sa1R3RGRnQy95RC8KenF2a05LRk9hMVVVTVJ0YnFZVkwyYzJZV0pJbWtFNWliL0l2ckhVVStDUGk3K1plTW0vNDhaK0NIWTFiakNNaApvTWdPcHVFUFJ5SXhUNlhndk9EQitsbWYxTVFhUFc2OCtMZzZESmFVOGM3c1lVU0FzUGI1a01LY2k4U1Bkd2ZnCnFBbXNRZ2xDRSswSEJOaVIvNGdMRU1IenJvTVVKZEhiUXVQODVSVk1xMTM1ZFVuWHRyTmdxallod2tuZUJMMHcKTGUzc0Uxa1p1UFgyCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K"
+  },
+  "eks_cluster_endpoint": {
+    "sensitive": false,
+    "type": "string",
+    "value": "https://68B393ABFFDA0C9D38C1BE61720A6EEF.gr7.ap-northeast-1.eks.amazonaws.com"
+  },
+  "eks_cluster_name": {
+    "sensitive": false,
+    "type": "string",
+    "value": "classify-cluster"
+  },
+  "eks_node_security_group_id": {
+    "sensitive": false,
+    "type": "string",
+    "value": "sg-0272a2ab931a56f72"
+  },
+  "kubernetes_secrets_yaml": {
+    "sensitive": true,
+    "type": "string",
+    "value": "apiVersion: v1\nkind: Secret\nmetadata:\n  name: classify-secrets\n  namespace: classify\ntype: Opaque\nstringData:\n  AUTH_DB_URL: \"auth_service:74CuepebpIJp(E$A@classify-auth-db.cqk9wg35dhjc.ap-northeast-1.rds.amazonaws.com:5432/auth_service\"\n  PHOTOS_DB_URL: \"photos_service:ejur6UYMQ$ySXa#E@classify-photos-db.cqk9wg35dhjc.ap-northeast-1.rds.amazonaws.com:5432/photos_service\"\n"
+  },
+  "photos_db_connection_string": {
+    "sensitive": true,
+    "type": "string",
+    "value": "postgresql://photos_service:ejur6UYMQ$ySXa#E@classify-photos-db.cqk9wg35dhjc.ap-northeast-1.rds.amazonaws.com:5432/photos_service"
+  },
+  "photos_db_endpoint": {
+    "sensitive": false,
+    "type": "string",
+    "value": "classify-photos-db.cqk9wg35dhjc.ap-northeast-1.rds.amazonaws.com:5432"
+  },
+  "photos_db_name": {
+    "sensitive": false,
+    "type": "string",
+    "value": "photos_service"
+  },
+  "photos_db_password": {
+    "sensitive": true,
+    "type": "string",
+    "value": "ejur6UYMQ$ySXa#E"
+  },
+  "photos_db_username": {
+    "sensitive": false,
+    "type": "string",
+    "value": "photos_service"
+  },
+  "private_subnet_ids": {
+    "sensitive": false,
+    "type": [
+      "tuple",
+      [
+        "string",
+        "string"
+      ]
+    ],
+    "value": [
+      "subnet-038e15e6c134f9550",
+      "subnet-052b287ad3c128b51"
+    ]
+  },
+  "public_subnet_ids": {
+    "sensitive": false,
+    "type": [
+      "tuple",
+      [
+        "string",
+        "string"
+      ]
+    ],
+    "value": [
+      "subnet-03a25cb362edd0fdc",
+      "subnet-0f19a10a7262d6c65"
+    ]
+  },
+  "redis_endpoint": {
+    "sensitive": false,
+    "type": "string",
+    "value": "classify-redis.vsfwqu.0001.apne1.cache.amazonaws.com"
+  },
+  "redis_port": {
+    "sensitive": false,
+    "type": "number",
+    "value": 6379
+  },
+  "redis_url": {
+    "sensitive": false,
+    "type": "string",
+    "value": "redis://classify-redis.vsfwqu.0001.apne1.cache.amazonaws.com:6379"
+  },
+  "vpc_id": {
+    "sensitive": false,
+    "type": "string",
+    "value": "vpc-017255354192355c9"
+  }
+}

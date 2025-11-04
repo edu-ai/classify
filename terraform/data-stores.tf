@@ -17,7 +17,7 @@ resource "aws_db_instance" "auth" {
   identifier = "${var.project_name}-auth-db"
 
   engine         = "postgres"
-  engine_version = "15.4"
+  engine_version = "15.14"
   instance_class = var.rds_instance_class
 
   allocated_storage     = var.rds_allocated_storage
@@ -52,7 +52,7 @@ resource "aws_db_instance" "photos" {
   identifier = "${var.project_name}-photos-db"
 
   engine         = "postgres"
-  engine_version = "15.4"
+  engine_version = "15.14"
   instance_class = var.rds_instance_class
 
   allocated_storage     = var.rds_allocated_storage
