@@ -1,6 +1,8 @@
 """Configuration for API Gateway using pydantic-settings."""
 
+import os
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field
 
 
 class Settings(BaseSettings):
@@ -19,7 +21,9 @@ class Settings(BaseSettings):
     service_max_retries: int = 3
 
     # CORS configuration
-    cors_origins: list[str] = ["http://localhost:3000"]
+    cors_origins: list[str] = Field(
+        default_factory=lambda: os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
+    )
 
     # Application settings
     app_name: str = "Classify API Gateway"

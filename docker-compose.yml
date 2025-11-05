@@ -17,6 +17,7 @@ services:
     environment:
       - NODE_ENV=development
       - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXTAUTH_URL=http://localhost:3000
     networks:
       - classify-network
     depends_on:
@@ -38,6 +39,7 @@ services:
       - AUTH_SERVICE_URL=http://auth-service:8000
       - PHOTOS_SERVICE_URL=http://photos-service:8000
       - BLUR_DETECTION_SERVICE_URL=http://blur-detection-service:8000
+      - CORS_ORIGINS=http://localhost:3000
     networks:
       - classify-network
     depends_on:
@@ -59,6 +61,8 @@ services:
     environment:
       - DATABASE_URL=postgresql://auth_service:password@auth-service-db:5432/auth_service
       - REDIS_URL=redis://redis:6379
+      - CORS_ORIGINS=http://localhost:3000
+      - JWT_SECRET_KEY=development-secret-key-change-this
     networks:
       - classify-network
     depends_on:
@@ -93,6 +97,8 @@ services:
     environment:
       - DATABASE_URL=postgresql://photos_service:password@photos-service-db:5432/photos_service
       - REDIS_URL=redis://redis:6379
+      - PHOTOS_SERVICE_URL=http://photos-service:8000
+      - CORS_ORIGINS=http://localhost:3000
     networks:
       - classify-network
     depends_on:
@@ -127,6 +133,7 @@ services:
     environment:
       - PHOTOS_SERVICE_URL=http://photos-service:8000
       - REDIS_URL=redis://redis:6379
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:8000
     networks:
       - classify-network
     depends_on:
@@ -138,7 +145,7 @@ services:
       context: ./backend/blur-detection-service
       dockerfile: Dockerfile.dev
     # container_name: classify_blur_worker
-    command: ["python", "worker.py"]   # Start worker only
+    command: [ "python", "worker.py" ] # Start worker only
     volumes:
       - ./backend/blur-detection-service:/app
     environment:
@@ -161,6 +168,7 @@ services:
 volumes:
   auth_service_data:
   photos_service_data:
+
 
 networks:
   classify-network:
