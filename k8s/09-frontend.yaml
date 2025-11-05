@@ -4,7 +4,7 @@ metadata:
   name: frontend
   namespace: classify
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: frontend
@@ -21,8 +21,14 @@ spec:
         env:
         - name: NEXT_PUBLIC_API_URL
           value: "http://k8s-classify-classify-42e5ab52fe-1471989583.ap-northeast-1.elb.amazonaws.com"
+        - name: NEXT_PUBLIC_AUTH_URL
+          value: "http://k8s-classify-classify-42e5ab52fe-1471989583.ap-northeast-1.elb.amazonaws.com/api"
+        - name: NEXT_PUBLIC_PHOTOS_URL
+          value: "http://k8s-classify-classify-42e5ab52fe-1471989583.ap-northeast-1.elb.amazonaws.com/api"
+        - name: NEXT_PUBLIC_BLUR_DETECTION_URL
+          value: "http://k8s-classify-classify-42e5ab52fe-1471989583.ap-northeast-1.elb.amazonaws.com/api"
         - name: NEXTAUTH_URL
-          value: "http://k8s-classify-classify-42e5ab52fe-1471989583.ap-northeast-1.elb.amazonaws.com"
+          value: "https://classify-app.com"
         envFrom:
         - secretRef:
             name: classify-secrets

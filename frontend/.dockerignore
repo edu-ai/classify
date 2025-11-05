@@ -1,0 +1,23 @@
+# Node modules
+node_modules
+npm-debug.log
+
+# Next.js
+.next
+out
+
+# Testing
+coverage
+.nyc_output
+
+# Misc
+.DS_Store
+*.pem
+
+# 🔴 .env.local は除外するが、.env.production は含める
+.env.local
+.env*.local
+
+# Git
+.git
+.gitignore

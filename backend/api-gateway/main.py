@@ -82,6 +82,28 @@ async def root():
     }
 
 
+@app.get("/health")
+async def health():
+    """Health check endpoint for ALB"""
+    return {
+        "status": "healthy",
+        "service": "Classify API Gateway",
+        "version": settings.app_version,
+        "checks": None
+    }
+
+
+@app.get("/api/health")
+async def health_api():
+    """Health check endpoint with /api prefix"""
+    return {
+        "status": "healthy",
+        "service": "Classify API Gateway",
+        "version": settings.app_version,
+        "checks": None
+    }
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

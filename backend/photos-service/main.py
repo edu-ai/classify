@@ -15,7 +15,7 @@ app = FastAPI(title="Classify Photos Service", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=os.getenv("CORS_ORIGINS", "http://localhost:3000").split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -23,7 +23,7 @@ app.add_middleware(
 
 PICKER_API_URL = "https://photospicker.googleapis.com/v1"
 AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "http://auth-service:8000")
-PHOTOS_SERVICE_URL = "http://localhost:8002"
+PHOTOS_SERVICE_URL = os.getenv("PHOTOS_SERVICE_URL", "http://localhost:8002")
 GOOGLE_PHOTOS_API_URL = "https://photoslibrary.googleapis.com/v1"
 
 def get_access_token_from_auth_service(user_id: str) -> str:
