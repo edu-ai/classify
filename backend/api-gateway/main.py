@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 
 from config import settings
 from exceptions import ServiceError
-from routes import health, auth, photos, blur
+from routes import health, auth, photos, blur, public_proxy
 
 # Configure logging
 logging.basicConfig(
@@ -64,6 +64,7 @@ app.include_router(health.router, tags=["Health"])
 app.include_router(auth.router)
 app.include_router(photos.router)
 app.include_router(blur.router)
+app.include_router(public_proxy.router)
 
 
 @app.get("/")

@@ -49,7 +49,7 @@ export default function Home() {
       }
 
       try {
-        const authResponse = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL}/api/health`)
+        const authResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/service/auth/health`)
         setServicesStatus(prev => ({
           ...prev,
           authService: authResponse.ok ? 'connected' : 'disconnected'
@@ -59,7 +59,7 @@ export default function Home() {
       }
 
       try {
-        const photosResponse = await fetch(`${process.env.NEXT_PUBLIC_PHOTOS_URL}/api/health`)
+        const photosResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/service/photos/health`)
         setServicesStatus(prev => ({
           ...prev,
           photosService: photosResponse.ok ? 'connected' : 'disconnected'
@@ -69,7 +69,7 @@ export default function Home() {
       }
 
       try {
-        const blurDetectionResponse = await fetch(`${process.env.NEXT_PUBLIC_BLUR_DETECTION_URL}/api/health`)
+        const blurDetectionResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/service/blur/health`)
         setServicesStatus(prev => ({
           ...prev,
           blurDetectionService: blurDetectionResponse.ok ? 'connected' : 'disconnected'
