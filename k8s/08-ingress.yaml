@@ -6,11 +6,11 @@ metadata:
   annotations:
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
-    # HTTPS を有効化
+    # Enable HTTPS
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
-    # HTTP を HTTPS にリダイレクト
+    # Redirect HTTP to HTTPS
     alb.ingress.kubernetes.io/ssl-redirect: '443'
-    # ACM 証明書を設定
+    # Configure ACM certificate
     alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ap-northeast-1:531220277611:certificate/0c84c17b-d330-48f6-b11a-ed0b42bf3c65
     alb.ingress.kubernetes.io/healthcheck-path: /api/health
     alb.ingress.kubernetes.io/healthcheck-protocol: HTTP
@@ -23,7 +23,7 @@ spec:
   rules:
   - http:
       paths:
-      # NextAuth API（Frontend）
+      # NextAuth API (Frontend)
       - path: /api/auth
         pathType: Prefix
         backend:
@@ -31,7 +31,7 @@ spec:
             name: frontend
             port:
               number: 3000
-      # Backend API（api-gateway）
+      # Backend API (api-gateway)
       - path: /api
         pathType: Prefix
         backend:
@@ -39,7 +39,7 @@ spec:
             name: api-gateway
             port:
               number: 8000
-      # Frontend（全て）
+      # Frontend (All)
       - path: /
         pathType: Prefix
         backend:
