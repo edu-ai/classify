@@ -11,12 +11,8 @@ data:
 
   # Redis (ElastiCache endpoint will be obtained from Terraform outputs later)
   REDIS_HOST: "classify-redis.vsfwqu.0001.apne1.cache.amazonaws.com"
-  REDIS_PORT: "6379"
-  REDIS_URL: "redis://classify-redis.vsfwqu.0001.apne1.cache.amazonaws.com"
+  REDIS_URL: "redis://classify-redis.vsfwqu.0001.apne1.cache.amazonaws.com:6379"
 
   # Application settings
   LOG_LEVEL: "info"
   ENVIRONMENT: "production"
-
-  # CORS Configuration
-  CORS_ORIGINS: "http://k8s-classify-classify-42e5ab52fe-1471989583.ap-northeast-1.elb.amazonaws.com"

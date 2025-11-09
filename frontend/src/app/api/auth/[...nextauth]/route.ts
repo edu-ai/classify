@@ -26,7 +26,8 @@ const handler = NextAuth({
   callbacks: {
     async signIn({ user, account }) {
       try {
-        const authResponse = await fetch("http://auth-service:8000/register", {
+        const AUTH_URL = process.env.NEXT_PUBLIC_AUTH_URL || process.env.AUTH_SERVICE_URL || "http://localhost:8001"
+        const authResponse = await fetch(`${AUTH_URL}/register`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -42,11 +43,11 @@ const handler = NextAuth({
 
           // Save OAuth token to Auth Service
           if (account?.access_token) {
-            await fetch("http://auth-service:8000/oauth/store-token", {
+            await fetch(`${AUTH_URL}/oauth/store-token`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                user_id: authData.user.id, // UUID を使う
+                user_id: authData.user.id, // Use UUID
                 access_token: account.access_token,
                 refresh_token: account.refresh_token,
                 expires_at: account.expires_at,

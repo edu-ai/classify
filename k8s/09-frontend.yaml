@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: classify
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: 531220277611.dkr.ecr.ap-northeast-1.amazonaws.com/classify-frontend:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: NEXT_PUBLIC_API_URL
+          value: "https://classify-app.com"
+        - name: NEXT_PUBLIC_AUTH_URL
+          value: "https://classify-app.com/api"
+        - name: NEXT_PUBLIC_PHOTOS_URL
+          value: "https://classify-app.com/api"
+        - name: NEXT_PUBLIC_BLUR_DETECTION_URL
+          value: "https://classify-app.com/api"
+        - name: NEXTAUTH_URL
+          value: "https://classify-app.com"
+        envFrom:
+        - secretRef:
+            name: classify-secrets
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "250m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: classify
+spec:
+  selector:
+    app: frontend
+  ports:
+  - port: 3000
+    targetPort: 3000
+  type: ClusterIP

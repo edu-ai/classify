@@ -126,7 +126,7 @@ output "ecr_registry" {
   value       = split("/", aws_ecr_repository.services["classify-api-gateway"].repository_url)[0]
 }
 
-# Kubernetes Secrets 用の出力
+# Output for Kubernetes Secrets
 output "kubernetes_secrets_yaml" {
   description = "Kubernetes Secrets YAML (use with caution)"
   value = <<-EOT

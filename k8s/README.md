@@ -1,14 +1,14 @@
-# Kubernetes マニフェスト - Classify プロジェクト
+# Kubernetes Manifests - Classify Project
 
-このディレクトリには、Classify プロジェクトを Kubernetes にデプロイするためのマニフェストファイルが含まれています。
+This directory contains Kubernetes manifest files for deploying the Classify project.
 
-## 📁 ファイル構成
+## File Structure
 
 ```
 k8s/
-├── 00-namespace.yaml              # Namespace 定義
-├── 01-configmap.yaml              # 環境変数設定
-├── 02-secrets-template.yaml       # Secret テンプレート（要置換）
+├── 00-namespace.yaml              # Namespace definition
+├── 01-configmap.yaml              # Environment variable configuration
+├── 02-secrets-template.yaml       # Secret template (requires replacement)
 ├── 03-api-gateway.yaml            # API Gateway Deployment & Service
 ├── 04-auth-service.yaml           # Auth Service Deployment & Service
 ├── 05-photos-service.yaml         # Photos Service Deployment & Service
@@ -17,82 +17,82 @@ k8s/
 └── 08-ingress.yaml                # Ingress (ALB)
 ```
 
-ファイル名の数字プレフィックスは適用順序を示します。
+The numeric prefixes in filenames indicate the application order.
 
 ---
 
-## 🚀 デプロイ手順
+## Deployment Steps
 
-### 前提条件
+### Prerequisites
 
-1. **EKS クラスタが作成済み**
-2. **kubectl が設定済み**
+1. **EKS cluster is already created**
+2. **kubectl is configured**
    ```bash
    aws eks update-kubeconfig --name classify-cluster --region ap-northeast-1
    ```
-3. **AWS Load Balancer Controller がインストール済み**
-4. **ECR に Docker イメージがプッシュ済み**
-5. **Terraform が適用済み** (RDS, ElastiCache のエンドポイント取得済み)
+3. **AWS Load Balancer Controller is installed**
+4. **Docker images are pushed to ECR**
+5. **Terraform is applied** (RDS and ElastiCache endpoints obtained)
 
 ---
 
-### ステップ 1: Secrets の作成
+### Step 1: Create Secrets
 
-`02-secrets-template.yaml` をコピーして実際の値に置き換えます。
+Copy `02-secrets-template.yaml` and replace with actual values.
 
 ```bash
-# テンプレートをコピー
+# Copy the template
 cp 02-secrets-template.yaml 02-secrets.yaml
 
-# 以下の値を置き換える
-# - REPLACE_WITH_PASSWORD (auth/photos DB パスワード)
-# - REPLACE_WITH_ENDPOINT (auth/photos DB エンドポイント)
+# Replace the following values:
+# - REPLACE_WITH_PASSWORD (auth/photos DB password)
+# - REPLACE_WITH_ENDPOINT (auth/photos DB endpoint)
 # - REPLACE_WITH_GOOGLE_CLIENT_ID
 # - REPLACE_WITH_GOOGLE_CLIENT_SECRET
-# - REPLACE_WITH_NEXTAUTH_SECRET (openssl rand -base64 32 で生成)
+# - REPLACE_WITH_NEXTAUTH_SECRET (generate with: openssl rand -base64 32)
 ```
 
-**必要な値の取得方法**:
+**How to obtain required values**:
 
 ```bash
-# Terraform outputs から RDS エンドポイントを取得
+# Get RDS endpoints from Terraform outputs
 cd terraform
 terraform output auth_db_endpoint
 terraform output photos_db_endpoint
 
-# Google OAuth 認証情報は Google Cloud Console から取得
-# NextAuth Secret の生成
+# Get Google OAuth credentials from Google Cloud Console
+# Generate NextAuth Secret
 openssl rand -base64 32
 ```
 
 ---
 
-### ステップ 2: ConfigMap の更新
+### Step 2: Update ConfigMap
 
-`01-configmap.yaml` で ElastiCache エンドポイントを置き換えます。
+Replace the ElastiCache endpoint in `01-configmap.yaml`.
 
 ```bash
-# Terraform outputs から ElastiCache エンドポイントを取得
+# Get ElastiCache endpoint from Terraform outputs
 cd terraform
 terraform output redis_endpoint
 
-# 01-configmap.yaml を編集
-# REDIS_HOST: "REPLACE_WITH_ELASTICACHE_ENDPOINT" を実際のエンドポイントに置き換え
+# Edit 01-configmap.yaml
+# Replace REDIS_HOST: "REPLACE_WITH_ELASTICACHE_ENDPOINT" with the actual endpoint
 ```
 
 ---
 
-### ステップ 3: Deployment マニフェストの更新
+### Step 3: Update Deployment Manifests
 
-すべての Deployment で ECR レジストリを置き換えます。
+Replace the ECR registry in all Deployments.
 
 ```bash
-# ECR レジストリ URL を取得
+# Get ECR registry URL
 AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 AWS_REGION="ap-northeast-1"
 ECR_REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
 
-# すべての Deployment で置き換え
+# Replace in all Deployments
 for file in k8s/03-*.yaml k8s/04-*.yaml k8s/05-*.yaml k8s/06-*.yaml k8s/07-*.yaml; do
   sed -i.bak "s|REPLACE_WITH_ECR_REGISTRY|${ECR_REGISTRY}|g" "$file"
   rm "${file}.bak"
@@ -101,30 +101,30 @@ done
 
 ---
 
-### ステップ 4: マニフェストの適用
+### Step 4: Apply Manifests
 
-順番に適用します。
+Apply in order.
 
 ```bash
-# Namespace 作成
+# Create Namespace
 kubectl apply -f k8s/00-namespace.yaml
 
-# ConfigMap と Secret を作成
+# Create ConfigMap and Secret
 kubectl apply -f k8s/01-configmap.yaml
-kubectl apply -f k8s/02-secrets.yaml  # 注意: 02-secrets.yaml (テンプレートではない)
+kubectl apply -f k8s/02-secrets.yaml  # Note: 02-secrets.yaml (not the template)
 
-# サービスをデプロイ
+# Deploy services
 kubectl apply -f k8s/03-api-gateway.yaml
 kubectl apply -f k8s/04-auth-service.yaml
 kubectl apply -f k8s/05-photos-service.yaml
 kubectl apply -f k8s/06-blur-detection-service.yaml
 kubectl apply -f k8s/07-blur-worker.yaml
 
-# Ingress を作成 (ALB が自動的に作成される)
+# Create Ingress (ALB will be automatically created)
 kubectl apply -f k8s/08-ingress.yaml
 ```
 
-**一括適用** (推奨):
+**Batch apply** (recommended):
 
 ```bash
 kubectl apply -f k8s/00-namespace.yaml
@@ -140,86 +140,86 @@ kubectl apply -f k8s/03-api-gateway.yaml \
 
 ---
 
-## 🔍 デプロイ確認
+## Deployment Verification
 
-### Pod の状態確認
+### Check Pod Status
 
 ```bash
 kubectl get pods -n classify
 ```
 
-すべての Pod が `Running` 状態になることを確認します。
+Verify that all Pods are in `Running` state.
 
-### Service の確認
+### Check Services
 
 ```bash
 kubectl get svc -n classify
 ```
 
-### Ingress と ALB の確認
+### Check Ingress and ALB
 
 ```bash
 kubectl get ingress -n classify
 
-# ALB の DNS 名を取得
+# Get ALB DNS name
 kubectl get ingress classify-ingress -n classify -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
 ```
 
-### ログ確認
+### Check Logs
 
 ```bash
-# 特定の Pod のログ
+# Logs for a specific Pod
 kubectl logs -n classify <pod-name>
 
-# API Gateway のログ
+# API Gateway logs
 kubectl logs -n classify -l app=api-gateway --tail=100
 
-# 継続的にログを監視
+# Monitor logs continuously
 kubectl logs -n classify -l app=api-gateway -f
 ```
 
 ---
 
-## 🛠 トラブルシューティング
+## Troubleshooting
 
-### Pod が起動しない場合
+### Pod Won't Start
 
 ```bash
-# Pod の詳細を確認
+# Check Pod details
 kubectl describe pod -n classify <pod-name>
 
-# イベントを確認
+# Check events
 kubectl get events -n classify --sort-by='.lastTimestamp'
 
-# ImagePullBackOff の場合、ECR へのアクセス権限を確認
+# For ImagePullBackOff, check ECR access permissions
 ```
 
-### データベース接続エラー
+### Database Connection Errors
 
 ```bash
-# Secret が正しく設定されているか確認
+# Verify Secret is correctly set
 kubectl get secret classify-secrets -n classify -o yaml
 
-# RDS セキュリティグループで EKS ノードからのアクセスを許可しているか確認
+# Verify RDS security group allows access from EKS nodes
 ```
 
-### Redis 接続エラー
+### Redis Connection Errors
 
 ```bash
-# ConfigMap が正しく設定されているか確認
+# Verify ConfigMap is correctly set
 kubectl get configmap classify-config -n classify -o yaml
 
-# ElastiCache セキュリティグループで EKS ノードからのアクセスを許可しているか確認
+# Verify ElastiCache security group allows access from EKS nodes
 ```
 
 ---
 
-## 🔄 更新とロールバック
+## Updates and Rollback
 
-### イメージの更新
+### Update Images
 
 ```bash
-# 新しいイメージをビルドして ECR にプッシュ後
+# After building new images and pushing to ECR
 kubectl rollout restart deployment/api-gateway -n classify
 kubectl rollout restart deployment/auth-service -n classify
 kubectl rollout restart deployment/photos-service -n classify
@@ -227,13 +227,13 @@ kubectl rollout restart deployment/blur-detection-service -n classify
 kubectl rollout restart deployment/blur-worker -n classify
 ```
 
-### ロールアウト状態の確認
+### Check Rollout Status
 
 ```bash
 kubectl rollout status deployment/api-gateway -n classify
 ```
 
-### ロールバック
+### Rollback
 
 ```bash
 kubectl rollout undo deployment/api-gateway -n classify
@@ -241,21 +241,21 @@ kubectl rollout undo deployment/api-gateway -n classify
 
 ---
 
-## 📊 リソース構成
+## Resource Configuration
 
 ### Replicas
 
-| サービス | Replicas | 理由 |
-|---------|---------|------|
-| api-gateway | 2 | 高可用性 |
-| auth-service | 2 | 高可用性 |
-| photos-service | 2 | 高可用性 |
-| blur-detection-service | 2 | 高可用性 |
-| blur-worker | 1 | バックグラウンドジョブ処理 |
+| Service | Replicas | Reason |
+|---------|---------|--------|
+| api-gateway | 2 | High availability |
+| auth-service | 2 | High availability |
+| photos-service | 2 | High availability |
+| blur-detection-service | 2 | High availability |
+| blur-worker | 1 | Background job processing |
 
-### リソース制限
+### Resource Limits
 
-| サービス | Request (CPU/Memory) | Limit (CPU/Memory) |
+| Service | Request (CPU/Memory) | Limit (CPU/Memory) |
 |---------|---------------------|-------------------|
 | api-gateway | 100m / 256Mi | 500m / 512Mi |
 | auth-service | 100m / 256Mi | 500m / 512Mi |
@@ -265,12 +265,12 @@ kubectl rollout undo deployment/api-gateway -n classify
 
 ---
 
-## 🔐 セキュリティ
+## Security
 
-### Secret の管理
+### Secret Management
 
-- **本番環境では** AWS Secrets Manager または AWS Systems Manager Parameter Store を使用することを推奨
-- **Git にコミットしない**: `02-secrets.yaml` は `.gitignore` に追加
+- **For production environments**, it is recommended to use AWS Secrets Manager or AWS Systems Manager Parameter Store
+- **Do not commit to Git**: Add `02-secrets.yaml` to `.gitignore`
 
 ```bash
 echo "k8s/02-secrets.yaml" >> .gitignore
@@ -278,26 +278,26 @@ echo "k8s/02-secrets.yaml" >> .gitignore
 
 ### RBAC (Role-Based Access Control)
 
-現在の構成では RBAC は設定していません。本番環境では以下を追加することを推奨:
+The current configuration does not include RBAC. For production environments, it is recommended to add:
 
-- ServiceAccount の作成
-- Role/RoleBinding の設定
-- Pod Security Standards の適用
+- ServiceAccount creation
+- Role/RoleBinding configuration
+- Pod Security Standards application
 
 ---
 
-## 📈 スケーリング
+## Scaling
 
-### 手動スケーリング
+### Manual Scaling
 
 ```bash
-# Replicas を増やす
+# Increase Replicas
 kubectl scale deployment/api-gateway -n classify --replicas=3
 ```
 
 ### Horizontal Pod Autoscaler (HPA)
 
-将来的に HPA を設定する場合:
+For future HPA configuration:
 
 ```yaml
 apiVersion: autoscaling/v2
@@ -323,15 +323,15 @@ spec:
 
 ---
 
-## 🗑 クリーンアップ
+## Cleanup
 
-すべてのリソースを削除:
+Delete all resources:
 
 ```bash
 kubectl delete namespace classify
 ```
 
-個別に削除:
+Delete individually:
 
 ```bash
 kubectl delete -f k8s/08-ingress.yaml
@@ -347,22 +347,22 @@ kubectl delete -f k8s/00-namespace.yaml
 
 ---
 
-## 📝 注意事項
+## Notes
 
-1. **Database Migration**: 初回デプロイ時は、RDS にテーブルを作成する必要があります
+1. **Database Migration**: For the initial deployment, you need to create tables in RDS
    - `backend/auth-service/init.sql`
    - `backend/photos-service/init.sql`
 
-2. **Environment Variables**: 各サービスで必要な環境変数がすべて設定されているか確認してください
+2. **Environment Variables**: Verify that all required environment variables are set for each service
 
-3. **Health Checks**: すべてのサービスが `/health` エンドポイントを実装している必要があります
+3. **Health Checks**: All services must implement the `/health` endpoint
 
-4. **Load Balancer**: AWS Load Balancer Controller が正しくインストールされていることを確認してください
+4. **Load Balancer**: Verify that AWS Load Balancer Controller is correctly installed
 
 ---
 
-## 🔗 関連リンク
+## Related Links
 
-- [Kubernetes 公式ドキュメント](https://kubernetes.io/ja/docs/home/)
+- [Kubernetes Official Documentation](https://kubernetes.io/docs/home/)
 - [AWS Load Balancer Controller](https://kubernetes-sigs.github.io/aws-load-balancer-controller/)
-- [Amazon EKS ユーザーガイド](https://docs.aws.amazon.com/ja_jp/eks/latest/userguide/)
+- [Amazon EKS User Guide](https://docs.aws.amazon.com/eks/latest/userguide/)
