@@ -24,3 +24,5 @@ class Photo(Base):
     mime_type = Column(String(100))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    tag = Column(String(100))
+    tagged_at = Column(DateTime(timezone=True))

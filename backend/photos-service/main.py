@@ -233,6 +233,7 @@ def get_media_items(user_id: str, db: Session = Depends(get_db)):
                 "google_created_time": photo.google_created_time,
                 "blur_score": photo.blur_score,
                 "is_blurred": photo.is_blurred,
+                "tag": photo.tag,
             }
             for photo in photos
         ]
@@ -296,6 +297,15 @@ def update_photo(photo_id: str, user_id: str, updates: dict = Body(...), db: Ses
     for key, value in updates.items():
         if hasattr(photo, key):
             setattr(photo, key, value)
+
+    if "tag" in updates:
+        photo.tag = updates["tag"]
+
+    if "tagged_at" in updates:
+        try:
+            photo.tagged_at = datetime.fromisoformat(updates["tagged_at"])
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid date format for tagged_at")
 
     db.commit()
     db.refresh(photo)

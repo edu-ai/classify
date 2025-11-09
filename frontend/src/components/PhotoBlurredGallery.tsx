@@ -14,7 +14,7 @@ export default function PhotoGallery({ photos, photosLoading, photosError, setPh
     const blurredPhotos = photos.filter(p => p.is_blurred === true)
     return (
         <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4 text-gray-600">Photo Gallery</h2>
+            <h2 className="text-xl font-semibold mb-4 text-gray-600">Blurred Photo Gallery</h2>
             {photosLoading ? (
                 <div className="text-center py-8">
                     <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
@@ -38,7 +38,7 @@ export default function PhotoGallery({ photos, photosLoading, photosError, setPh
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                     <p className="text-lg mb-2">No photos found in database</p>
-                    <p className="text-sm">Please pick and sync your photos first.</p>
+                    <p className="text-sm">Please sync and detect your photos first.</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">

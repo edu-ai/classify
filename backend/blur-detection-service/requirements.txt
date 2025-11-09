@@ -17,3 +17,4 @@ pydantic==2.5.0
 python-dotenv==1.0.0
 rq==1.13.0
 blur-detector==0.0.6
+openai>=1.0.0

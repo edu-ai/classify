@@ -133,6 +133,7 @@ services:
     environment:
       - PHOTOS_SERVICE_URL=http://photos-service:8000
       - REDIS_URL=redis://redis:6379
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
       - CORS_ORIGINS=http://localhost:3000,http://localhost:8000
     networks:
       - classify-network
