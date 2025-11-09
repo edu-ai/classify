@@ -8,6 +8,7 @@ import PhotoGallery from '@/components/PhotoGallery'
 import PhotoStatistics from '@/components/PhotoStatistics'
 import PhotoClearGallery from '@/components/PhotoClearGallery'
 import PhotoBlurredGallery from '@/components/PhotoBlurredGallery'
+import PhotoTagGallery from '@/components/PhotoTagGallery'
 import DebugInfo from '@/components/DebugInfo'
 import { Photo } from '@/types'
 
@@ -34,6 +35,7 @@ export default function Home() {
     blurDetectionService: 'checking...',
   })
   const [activeTab, setActiveTab] = useState('gallery')
+  const [isPolling, setIsPolling] = useState(false)
 
   useEffect(() => {
     const checkServices = async () => {
@@ -136,12 +138,30 @@ export default function Home() {
         google_created_time: item.google_created_time,
         blur_score: item.blur_score,
         is_blurred: item.is_blurred,
+        tag: item.tag,
       }))
 
       return formattedItems ?? []
     } catch (err) {
       console.error("Failed to fetch media items:", err)
       return []
+    }
+  }
+
+  const labelPhoto = async (photoId: string) => {
+    if (!session) return null
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BLUR_DETECTION_URL}/tag/${photoId}?user_id=${session.user.id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      if (!res.ok) throw new Error('Failed to label photo')
+      const data = await res.json()
+      setPhotos(prev => prev.map(p => p.id === photoId ? { ...p, tag: data.tag } : p))
+      return data
+    } catch (err) {
+      console.error('label photo error:', err)
+      return null
     }
   }
 
@@ -166,11 +186,6 @@ export default function Home() {
   const analyzePhotosBatch = async (photoIds: string[], threshold = 0.30) => {
     if (!session) return null
     try {
-      console.log(JSON.stringify({
-        user_id: session.user.id,
-        photo_ids: photoIds,
-        threshold
-      }))
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BLUR_DETECTION_URL}/analyze/batch`,
         {
@@ -185,7 +200,10 @@ export default function Home() {
       )
       if (!res.ok) throw new Error('Failed to queue batch analysis')
       const data = await res.json()
-      console.log('Batch queued:', data)
+
+      setIsPolling(true)
+      setTimeout(() => setIsPolling(false), 10000)
+      
       return data
     } catch (err) {
       console.error('Batch analysis error:', err)
@@ -240,7 +258,6 @@ export default function Home() {
     }
   }
 
-
   useEffect(() => {
     const fetchPhotos = async () => {
       if (!session) return
@@ -265,7 +282,7 @@ export default function Home() {
   }, [session])
 
   useEffect(() => {
-    if (!session) return
+    if (!session || !isPolling) return
 
     const interval = setInterval(async () => {
       try {
@@ -274,10 +291,10 @@ export default function Home() {
       } catch (err) {
         console.error('Failed to fetch photos:', err)
       }
-    }, 2000) // Update every 2 seconds
+    }, 2000)
 
     return () => clearInterval(interval)
-  }, [session])
+  }, [session, isPolling])
 
   return (
     <main className="flex bg-gray-50">
@@ -295,10 +312,11 @@ export default function Home() {
         <div className="flex h-screen">
           <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
           <div className="flex-1 overflow-auto p-6">
-            {activeTab === 'gallery' && <PhotoGallery photos={photos} photosLoading={photosLoading} photosError={photosError} setPhotos={setPhotos} handleExpiredPhoto={handleExpiredPhoto} analyzePhoto={analyzePhoto} analyzePhotosBatch={analyzePhotosBatch} createUnblurredAlbum={createUnblurredAlbum} albumLoading={albumLoading} />}
+            {activeTab === 'gallery' && <PhotoGallery photos={photos} photosLoading={photosLoading} photosError={photosError} setPhotos={setPhotos} handleExpiredPhoto={handleExpiredPhoto} labelPhoto={labelPhoto} analyzePhoto={analyzePhoto} analyzePhotosBatch={analyzePhotosBatch} createUnblurredAlbum={createUnblurredAlbum} albumLoading={albumLoading} />}
             {activeTab === 'stats' && <PhotoStatistics photos={photos} />}
             {activeTab === 'clearGallery' && <PhotoClearGallery photos={photos} photosLoading={photosLoading} photosError={photosError} setPhotos={setPhotos} handleExpiredPhoto={handleExpiredPhoto} />}
             {activeTab === 'blurredGallery' && <PhotoBlurredGallery photos={photos} photosLoading={photosLoading} photosError={photosError} setPhotos={setPhotos} handleExpiredPhoto={handleExpiredPhoto} />}
+            {activeTab === 'tagGallery' && <PhotoTagGallery photos={photos} photosLoading={photosLoading} photosError={photosError} setPhotos={setPhotos} handleExpiredPhoto={handleExpiredPhoto} />}
             {activeTab === 'debug' && <DebugInfo servicesStatus={servicesStatus} />}
           </div>
         </div>

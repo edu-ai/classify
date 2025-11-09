@@ -21,6 +21,9 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
                 <button className={`w-full text-left px-4 py-2 rounded text-gray-600 ${activeTab === 'blurredGallery' ? 'bg-gray-100' : ''}`} onClick={() => setActiveTab('blurredGallery')}>
                     Blurred Photo Gallery
                 </button>
+                <button className={`w-full text-left px-4 py-2 rounded text-gray-600 ${activeTab === 'tagGallery' ? 'bg-gray-100' : ''}`} onClick={() => setActiveTab('tagGallery')}>
+                    Tagged Photo Gallery
+                </button>
                 <button className={`w-full text-left px-4 py-2 rounded text-gray-600 ${activeTab === 'debug' ? 'bg-gray-100' : ''}`} onClick={() => setActiveTab('debug')}>
                     Debug Info
                 </button>

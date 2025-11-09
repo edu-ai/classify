@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Optional, List
 from uuid import UUID
 from blur_tasks import analyze_single_photo
+from tag_detector import ai_tagger
 
 from fastapi import FastAPI, Depends, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -228,3 +229,49 @@ if __name__ == "__main__":
         reload=True,
         log_level="info"
     )
+
+@app.post("/tag/{photo_id}")
+async def tag_photo(
+    photo_id: UUID,
+    user_id: UUID = Query(..., description="User ID")
+):
+    try:
+        response = requests.get(
+            f"{PHOTOS_SERVICE_URL}/photos/{photo_id}/meta",
+            params={"user_id": str(user_id)},
+            timeout=10
+        )
+        if response.status_code != 200:
+            raise HTTPException(status_code=response.status_code, detail=response.text)
+
+        photo = response.json()
+
+        image_bytes = await _fetch_image_from_photo_service(
+            photo["google_photo_id"],
+            user_id
+        )
+
+        tag = ai_tagger.generate_tags(image_bytes)
+
+        update_response = requests.patch(
+            f"{PHOTOS_SERVICE_URL}/photos/{photo_id}",
+            params={"user_id": str(user_id)},
+            json={
+                "tag": tag,
+                "tagged_at": datetime.utcnow().isoformat()
+            },
+            timeout=10
+        )
+
+        if update_response.status_code != 200:
+            raise HTTPException(status_code=update_response.status_code, detail=update_response.text)
+
+        return {
+            "photo_id": str(photo_id),
+            "tag": tag,
+            "tagged_at": datetime.utcnow().isoformat()
+        }
+
+    except Exception as e:
+        logger.error(f"Tagging failed: {str(e)}")
+    raise HTTPException(status_code=500, detail=str(e))

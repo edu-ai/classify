@@ -8,6 +8,7 @@ interface PhotoGalleryProps {
     photosError?: string | null
     setPhotos: Dispatch<SetStateAction<Photo[]>>
     handleExpiredPhoto: (id: string) => void
+    labelPhoto: (photoId: string) => void
     analyzePhoto: (photoId: string) => void
     analyzePhotosBatch: (photoIds: string[], threshold?: number) => Promise<any>
     createUnblurredAlbum: () => Promise<void>
@@ -20,6 +21,7 @@ export default function PhotoGallery({
     photosError,
     setPhotos,
     handleExpiredPhoto,
+    labelPhoto,
     analyzePhoto,
     analyzePhotosBatch,
     createUnblurredAlbum,
@@ -48,6 +50,11 @@ export default function PhotoGallery({
                     </li>
                     <li>
                         <strong>Analyze Photos:</strong> Click the 「Detect Blur」 button on each photo to run blur detection.
+                        <br />
+                        <span className="text-sm text-gray-500">Estimated time: a few hundred milliseconds to 1 second per photo</span>
+                    </li>
+                    <li>
+                        <strong>Tag Photos:</strong> Click the 「Label tag」 button on each photo to automatically generate descriptive tags. These tags help categorize and filter your photos in the gallery.
                         <br />
                         <span className="text-sm text-gray-500">Estimated time: a few hundred milliseconds to 1 second per photo</span>
                     </li>
@@ -139,6 +146,21 @@ export default function PhotoGallery({
                                                     <p className="text-sm text-gray-600">Status: -</p>
                                                 </>
                                             )}
+                                            {photo.tag ? (
+                                                <>
+                                                    <p className="text-sm text-gray-600">Tag: {photo.tag}</p>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <p className="text-sm text-gray-600">Tag: -</p>
+                                                </>
+                                            )}
+                                            <button
+                                                className="w-full px-3 py-2 text-white text-sm font-semibold rounded mt-1 bg-blue-500 hover:bg-blue-600"
+                                                onClick={() => labelPhoto(photo.id)}
+                                            >
+                                                Label tag
+                                            </button>
                                             <button
                                                 className="w-full px-3 py-2 text-white text-sm font-semibold rounded mt-1 bg-blue-500 hover:bg-blue-600"
                                                 onClick={() => analyzePhoto(photo.id)}

@@ -127,6 +127,7 @@ services:
     environment:
       - PHOTOS_SERVICE_URL=http://photos-service:8000
       - REDIS_URL=redis://redis:6379
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
     networks:
       - classify-network
     depends_on:
@@ -138,7 +139,7 @@ services:
       context: ./backend/blur-detection-service
       dockerfile: Dockerfile.dev
     # container_name: classify_blur_worker
-    command: ["python", "worker.py"]   # Start worker only
+    command: [ "python", "worker.py" ] # Start worker only
     volumes:
       - ./backend/blur-detection-service:/app
     environment:
@@ -161,6 +162,7 @@ services:
 volumes:
   auth_service_data:
   photos_service_data:
+
 
 networks:
   classify-network:

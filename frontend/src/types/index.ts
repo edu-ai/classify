@@ -6,6 +6,7 @@ export interface Photo {
     blur_score?: number
     is_blurred?: boolean
     proxyUrl?: string
+    tag?: string
 }
 
 export interface ServicesStatus {
