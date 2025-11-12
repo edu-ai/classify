@@ -24,6 +24,11 @@ spec:
           containerPort: 8000
           protocol: TCP
         env:
+        - name: REDIS_URL
+          valueFrom:
+            configMapKeyRef:
+              name: classify-config
+              key: REDIS_URL
         - name: REDIS_HOST
           valueFrom:
             configMapKeyRef:
@@ -44,6 +49,16 @@ spec:
             configMapKeyRef:
               name: classify-config
               key: LOG_LEVEL
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: classify-secrets
+              key: OPENAI_API_KEY
+        - name: OPENAI_MODEL
+          valueFrom:
+            configMapKeyRef:
+              name: classify-config
+              key: OPENAI_MODEL
         resources:
           requests:
             memory: "512Mi"

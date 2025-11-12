@@ -12,6 +12,7 @@
 - Login via Google OAuth authentication
 - Integration with Google Photos Library API and Photos Picker API
 - Image blur detection using OpenCV
+- AI-powered photo tagging using OpenAI's vision model (gpt-4o-mini)
 - Categorized image display (All/Blurred/Not Blurred/Unprocessed)
 - User-configurable blur detection threshold
 - Automatic album creation with unblurred photos
@@ -41,6 +42,7 @@
 - **Cache & Queue**: Redis 7
 - **API**: REST API (FastAPI)
 - **Authentication**: NextAuth.js (Google OAuth)
+- **AI/ML**: OpenAI API (gpt-4o-mini for vision-based photo tagging)
 - **Container**: Docker + Docker Compose
 - **Orchestration**: Kubernetes (EKS)
 - **Cloud**: AWS (EKS, RDS, ElastiCache, ALB, ECR, ACM)
@@ -171,6 +173,11 @@ GET    /api/v1/blur/jobs/{job_id}          # Get blur analysis job status
 GET    /api/v1/photos/{photo_id}/result    # Get blur analysis result
 ```
 
+##### AI Photo Tagging Endpoints
+```
+POST   /api/v1/photos/{photo_id}/tag      # Generate AI-powered descriptive tags for photo
+```
+
 ##### Album Management Endpoints
 ```
 POST   /api/v1/photos/google/unblurred-album/{user_id}  # Create Google Photos album with unblurred images
@@ -212,6 +219,7 @@ GET    /health                                     # Health check
 ```
 POST   /analyze/{photo_id}?user_id={user_id}       # Analyze single photo for blur (synchronous)
 POST   /analyze/batch                              # Submit batch of photos for blur analysis (async via worker)
+POST   /tag/{photo_id}?user_id={user_id}           # Generate AI tags for photo using OpenAI vision model
 GET    /health                                     # Health check
 ```
 
@@ -464,6 +472,7 @@ data:
   REDIS_PORT: "6379"
   LOG_LEVEL: "info"
   ENVIRONMENT: "production"
+  OPENAI_MODEL: "gpt-4o-mini"
 ```
 
 ##### Secrets (`02-secrets-template.yaml`)
@@ -474,6 +483,7 @@ stringData:
   GOOGLE_CLIENT_ID: "<client_id>"
   GOOGLE_CLIENT_SECRET: "<client_secret>"
   NEXTAUTH_SECRET: "<nextauth_secret>"
+  OPENAI_API_KEY: "<openai_api_key>"
 ```
 
 ##### Deployments and Services
@@ -979,6 +989,7 @@ See [Development Workflow](#7-development-workflow) section for detailed instruc
 | Photo Import/Sync | ✅ Production | Via Google Photos Picker API |
 | Blur Detection (Single) | ✅ Production | OpenCV-based with configurable threshold |
 | Blur Detection (Batch) | ✅ Production | Async queue processing via Redis/RQ |
+| AI Photo Tagging | ✅ Production | OpenAI vision model (gpt-4o-mini) for automatic tag generation |
 | Photo Filtering | ✅ Production | All, blurred, clear, unprocessed views |
 | Album Creation | ✅ Production | Creates Google Photos album with unblurred photos |
 | Photo Gallery | ✅ Production | Grid view with proxy image serving |
@@ -1000,6 +1011,8 @@ See [Development Workflow](#7-development-workflow) section for detailed instruc
 - **Google Photos API**: https://developers.google.com/photos
 - **Google OAuth**: https://developers.google.com/identity/protocols/oauth2
 - **NextAuth.js**: https://next-auth.js.org/
+- **OpenAI API**: https://platform.openai.com/docs
+- **OpenAI Pricing**: https://openai.com/api/pricing/
 
 ### 13.3 AWS Resources
 

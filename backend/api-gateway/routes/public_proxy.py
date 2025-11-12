@@ -195,6 +195,28 @@ async def proxy_photo(media_item_id: str, user_id: str):
         raise HTTPException(status_code=500, detail="Failed to fetch photo")
 
 
+@router.post("/analyze/batch")
+async def proxy_blur_analyze_batch(payload: dict):
+    """Proxy to blur-detection-service for batch analysis.
+
+    Forwards to: blur-detection-service POST /analyze/batch
+    Body is forwarded as-is.
+    """
+    url = f"{settings.blur_detection_service_url}/analyze/batch"
+    try:
+        async with httpx.AsyncClient(timeout=settings.service_timeout) as client:
+            r = await client.post(url, json=payload)
+        if r.status_code >= 400:
+            logger.error(f"blur-detection /analyze/batch returned {r.status_code}: {r.text}")
+            raise HTTPException(status_code=r.status_code, detail=r.text)
+        return JSONResponse(status_code=r.status_code, content=r.json())
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to proxy blur analyze batch: {e}")
+        raise HTTPException(status_code=500, detail="Failed to queue batch analysis")
+
+
 @router.post("/analyze/{photo_id}")
 async def proxy_blur_analyze(photo_id: str, user_id: str, threshold: Optional[float] = None):
     """Proxy to blur-detection-service to analyze a single photo.
@@ -218,26 +240,25 @@ async def proxy_blur_analyze(photo_id: str, user_id: str, threshold: Optional[fl
         raise HTTPException(status_code=500, detail="Failed to analyze photo")
 
 
-@router.post("/analyze/batch")
-async def proxy_blur_analyze_batch(payload: dict):
-    """Proxy to blur-detection-service for batch analysis.
+@router.post("/tag/{photo_id}")
+async def proxy_blur_tag(photo_id: str, user_id: str = Query(...)):
+    """Proxy to blur-detection-service to generate AI tags for a photo.
 
-    Forwards to: blur-detection-service POST /analyze/batch
-    Body is forwarded as-is.
+    Forwards to: blur-detection-service POST /tag/{photo_id}?user_id=...
     """
-    url = f"{settings.blur_detection_service_url}/analyze/batch"
+    url = f"{settings.blur_detection_service_url}/tag/{photo_id}"
     try:
         async with httpx.AsyncClient(timeout=settings.service_timeout) as client:
-            r = await client.post(url, json=payload)
+            r = await client.post(url, params={"user_id": user_id})
         if r.status_code >= 400:
-            logger.error(f"blur-detection /analyze/batch returned {r.status_code}: {r.text}")
+            logger.error(f"blur-detection /tag returned {r.status_code}: {r.text}")
             raise HTTPException(status_code=r.status_code, detail=r.text)
         return JSONResponse(status_code=r.status_code, content=r.json())
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to proxy blur analyze batch: {e}")
-        raise HTTPException(status_code=500, detail="Failed to queue batch analysis")
+        logger.error(f"Failed to proxy blur tag: {e}")
+        raise HTTPException(status_code=500, detail="Failed to generate tags for photo")
 
 
 @router.get("/service/auth/health")

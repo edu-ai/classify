@@ -464,3 +464,107 @@ async def analyze_batch(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to start batch analysis",
         )
+
+
+@router.post(
+    "/photos/{photo_id}/tag",
+    status_code=status.HTTP_200_OK,
+    summary="Generate AI tags for photo",
+    description="Analyze a photo and generate descriptive tags using OpenAI's vision model.",
+)
+async def tag_photo(
+    photo_id: str = Path(..., description="Photo ID to tag"),
+    current_user: dict = Depends(get_current_user),
+):
+    """Generate AI tags for a photo.
+
+    Uses OpenAI's vision model (gpt-4o-mini) to analyze the photo
+    and generate descriptive tags. The tags are stored in the photo metadata.
+
+    Flow:
+    1. Verify photo exists and user owns it
+    2. Submit photo to blur-detection-service for AI tagging
+    3. OpenAI analyzes the image and returns descriptive tag
+    4. Tag is stored in photos-service database
+    5. Return tag result
+
+    Headers:
+        Authorization: Bearer {access_token}
+
+    Args:
+        photo_id: Unique photo identifier
+        current_user: User info from authentication middleware
+
+    Returns:
+        Dictionary with photo_id, tag, and tagged_at timestamp
+
+    Raises:
+        HTTPException: 401 if not authenticated
+        HTTPException: 404 if photo not found or user doesn't own it
+        HTTPException: 503 if blur-detection-service is unavailable
+    """
+    try:
+        user_id = current_user.get("user_id")
+        token = current_user.get("token")
+
+        if not user_id or not token:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid authentication data",
+            )
+
+        logger.info(f"Starting AI tagging for photo {photo_id}")
+
+        # Verify photo exists and user owns it
+        async with PhotosServiceClient() as photos_client:
+            photo_data = await photos_client.get_photo(
+                photo_id=photo_id,
+                user_id=user_id,
+                token=token,
+            )
+
+        # Verify ownership
+        if photo_data.get("user_id") != user_id:
+            logger.warning(f"User {user_id} attempted to tag photo {photo_id} owned by {photo_data.get('user_id')}")
+            raise ResourceNotFoundError(
+                message="Photo not found",
+                resource_type="photo",
+                resource_id=photo_id,
+            )
+
+        # Submit tagging request
+        async with BlurDetectionServiceClient() as blur_client:
+            tag_data = await blur_client.tag_photo(
+                photo_id=photo_id,
+                user_id=user_id,
+                token=token,
+            )
+
+        logger.info(f"AI tagging completed for photo {photo_id}")
+
+        return {
+            "photo_id": tag_data.get("photo_id"),
+            "tag": tag_data.get("tag"),
+            "tagged_at": tag_data.get("tagged_at"),
+        }
+
+    except ResourceNotFoundError as e:
+        logger.error(f"Photo not found: {e.message}")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=e.message,
+        )
+    except (AuthorizationError, ServiceError) as e:
+        logger.error(f"Error generating tags: {e.message}")
+        raise HTTPException(
+            status_code=e.status_code,
+            detail=e.message,
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error generating tags: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to generate tags",
+        )

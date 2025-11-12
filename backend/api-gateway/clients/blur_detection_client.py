@@ -254,3 +254,46 @@ class BlurDetectionServiceClient(ServiceClient):
                 message=f"Failed to submit batch analysis: {str(e)}",
                 service_name="blur-detection-service",
             )
+
+    async def tag_photo(
+        self,
+        photo_id: str,
+        user_id: str,
+        token: str,
+    ) -> Dict[str, Any]:
+        """Generate AI tags for a photo using OpenAI API.
+
+        This will analyze the photo and generate descriptive tags using
+        OpenAI's vision model (gpt-4o-mini).
+
+        Args:
+            photo_id: Photo ID
+            user_id: User ID (for authorization)
+            token: JWT access token
+
+        Returns:
+            Dictionary containing:
+            - photo_id: Photo ID
+            - tag: Generated tag string
+            - tagged_at: Tagging timestamp
+
+        Raises:
+            ServiceError: If tagging fails
+        """
+        try:
+            logger.info(f"Requesting AI tags for photo {photo_id}")
+
+            response = await self.post(
+                f"/tag/{photo_id}",
+                headers={"Authorization": f"Bearer {token}"},
+                params={"user_id": user_id},
+            )
+
+            return response
+
+        except Exception as e:
+            logger.error(f"Failed to generate tags for photo: {str(e)}")
+            raise ServiceError(
+                message=f"Failed to generate tags for photo: {str(e)}",
+                service_name="blur-detection-service",
+            )
